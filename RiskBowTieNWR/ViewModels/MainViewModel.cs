@@ -119,6 +119,58 @@ namespace RiskBowTieNWR.ViewModels
         }
         private string _selectedDataFolder;
 
+        public StoryLite2 SelectedTemplateStory
+        {
+            get { return _selectedTemplateStory; }
+
+            set
+            {
+                _selectedTemplateStory = value;
+                OnPropertyChanged("SelectedTemplateStory");
+                OnPropertyChanged("SelectedTemplateName");
+            }
+        }
+        private StoryLite2 _selectedTemplateStory;
+
+        public StoryLite2 SelectedPortfolioStory
+        {
+            get { return _selectedPortfolioStory; }
+
+            set
+            {
+                _selectedPortfolioStory = value;
+                OnPropertyChanged("SelectedPortfolioStory");
+                OnPropertyChanged("SelectedPortfolioName");
+            }
+        }
+        private StoryLite2 _selectedPortfolioStory;
+
+        public StoryLite2 SelectedControlStory
+        {
+            get { return _selectedControlStory; }
+
+            set
+            {
+                _selectedControlStory = value;
+                OnPropertyChanged("SelectedControlStory");
+                OnPropertyChanged("SelectedControlName");
+            }
+        }
+        private StoryLite2 _selectedControlStory;
+
+        public string SelectedTemplateName
+        {
+            get { return SelectedTemplateStory.Name; }
+        }
+        public string SelectedPortfolioName
+        {
+            get { return SelectedPortfolioStory.Name; }
+        }
+        public string SelectedControlName
+        {
+            get { return SelectedControlStory.Name; }
+        }
+
 
 
         public StoryLite2 SelectedStory
@@ -245,6 +297,9 @@ namespace RiskBowTieNWR.ViewModels
 
             ModelHelper.RegWrite("DataFolder", SelectedDataFolder);
             ModelHelper.RegWrite("Team", ModelHelper.SerializeJSON(SelectedTeam));
+            ModelHelper.RegWrite("TemplateStory", ModelHelper.SerializeJSON(SelectedTemplateStory));
+            ModelHelper.RegWrite("PortfolioStory", ModelHelper.SerializeJSON(SelectedPortfolioStory));
+            ModelHelper.RegWrite("ControlStory", ModelHelper.SerializeJSON(SelectedControlStory));
 
             string master = ModelHelper.SerializeJSON(_masterStories);
             ModelHelper.RegWrite("master", master);
@@ -277,6 +332,15 @@ namespace RiskBowTieNWR.ViewModels
             SelectedTeam =
                 ModelHelper.DeserializeJSON<TeamLite>(ModelHelper.RegRead("Team",
                     ModelHelper.SerializeJSON(SelectedTeam)));
+            SelectedTemplateStory =
+                ModelHelper.DeserializeJSON<StoryLite2>(ModelHelper.RegRead("TemplateStory",
+                    ModelHelper.SerializeJSON(SelectedTemplateStory)));
+            SelectedPortfolioStory =
+                ModelHelper.DeserializeJSON<StoryLite2>(ModelHelper.RegRead("PortfolioStory",
+                    ModelHelper.SerializeJSON(SelectedPortfolioStory)));
+            SelectedControlStory =
+                ModelHelper.DeserializeJSON<StoryLite2>(ModelHelper.RegRead("ControlStory",
+                    ModelHelper.SerializeJSON(SelectedControlStory)));
 
             SaveAllData();
         }

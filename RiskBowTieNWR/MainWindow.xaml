@@ -95,22 +95,38 @@
             <TabItem Header="Team and Folders" >
                 <Grid Grid.Column="1" Margin="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="30"/>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="30"/>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition Height="10"/>
+                        <RowDefinition />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="40"/>
                         <ColumnDefinition Width="200"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Selected Team:" />
-                    <Button Grid.Row="0" Grid.Column="2" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectTeam_Click"/>
-                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding SelectedTeamName}" />
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Selected Folder:" />
-                    <Button Grid.Row="2" Grid.Column="2" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectFolder_Click"/>
-                    <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding SelectedDataFolder}" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Team:" />
+                    <Button Grid.Row="0" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectTeam_Click"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding SelectedTeamName}" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Template:" />
+                    <Button Grid.Row="1" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectTemplate_Click"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SelectedTemplateName}" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Portfolio:" />
+                    <Button Grid.Row="2" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectPortfolio_Click"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding SelectedPortfolioName}" />
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Control:" />
+                    <Button Grid.Row="3" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectControl_Click"/>
+                    <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding SelectedControlName}" />
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Data Folder:" />
+                    <Button Grid.Row="5" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectFolder_Click"/>
+                    <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding SelectedDataFolder}" TextWrapping="Wrap"/>
                 </Grid>
 
             </TabItem>
