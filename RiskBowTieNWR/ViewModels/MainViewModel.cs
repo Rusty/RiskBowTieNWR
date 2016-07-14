@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics.Eventing.Reader;
+using System.IO;
 using System.Linq;
 using System.Security.Permissions;
 using System.Text;
@@ -52,6 +53,17 @@ namespace RiskBowTieNWR.ViewModels
             Status = message;
             await Task.Delay(10);
         }
+
+        public string ProgressLogText
+        {
+            get { return _progressLogText; }
+            set
+            {
+                _progressLogText = value;
+                OnPropertyChanged("ProgressLogText");
+            }    
+        }
+        private string _progressLogText;
 
         public bool RememberPassword 
         { get { return _rememberPassword; }
@@ -171,7 +183,27 @@ namespace RiskBowTieNWR.ViewModels
             get { return SelectedControlStory.Name; }
         }
 
+        public ObservableCollection<FileObject> FileList
+        {
+            get { return _fileList; }
+            set
+            {
+                _fileList = value;
+                OnPropertyChanged("FileList");
+            }
+        }
+        private ObservableCollection<FileObject> _fileList;
 
+        public void LoadFileList()
+        {
+            var files = System.IO.Directory.GetFiles(SelectedDataFolder, "*.xls*", SearchOption.TopDirectoryOnly);
+            var list = new ObservableCollection<FileObject>();
+            foreach (var file in files)
+            {
+                list.Add( new FileObject(file) );
+            }
+            FileList = list;
+        }
 
         public StoryLite2 SelectedStory
         {
@@ -461,7 +493,7 @@ namespace RiskBowTieNWR.ViewModels
                 differences.Add(source.Id, list);
 
                 if (source.Name != copy.Name)
-                    list.Add("Name has changed.");
+                    list.Add("FileName has changed.");
                 if (source.Description != copy.Description)
                     list.Add("Description has changed.");
                 if (source.IsTransparent != copy.IsTransparent)

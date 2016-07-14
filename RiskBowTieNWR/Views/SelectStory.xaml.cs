@@ -171,7 +171,7 @@ namespace RiskBowTieNWR.Views
                 }
 
                 //this.userStories.ItemsSource = tStories;
-                //this.userStories.Items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+                //this.userStories.Items.SortDescriptions.Add(new SortDescription("FileName", ListSortDirection.Ascending));
 
             }
             catch (Exception e1)

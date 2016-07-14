@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using RiskBowTieNWR.Helpers;
 using RiskBowTieNWR.ViewModels;
 using RiskBowTieNWR.Views;
 using SC.API.ComInterop;
@@ -138,5 +139,101 @@ namespace RiskBowTieNWR
                 _viewModel.SelectedDataFolder = dialog.SelectedPath;
             }
         }
+
+        private void mainTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _viewModel.LoadFileList();
+        }
+
+        private void SelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var f in _viewModel.FileList)
+                f.IsSelected = true;
+
+            listFiles.ItemsSource = null;
+            listFiles.ItemsSource = _viewModel.FileList;
+        }
+
+        private void SelectNon_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var f in _viewModel.FileList)
+                f.IsSelected = false;
+
+            listFiles.ItemsSource = null;
+            listFiles.ItemsSource = _viewModel.FileList;
+        }
+
+        private void ProcessFiles_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_viewModel.FileList.Where(f => f.IsSelected==true).Any())
+            {
+                MessageBox.Show("Please make sure you select some files from the list on the left");
+                return;
+            }
+
+            ProcessSelectedFiles();
+
+        }
+
+        private async void ProcessSelectedFiles()
+        {
+            _viewModel.ProgressLogText = ""; // clear
+            var logger = new Logger(_viewModel);
+
+            // find list of stories for selected team
+            logger.Log($"Reading Existing Stories in {_viewModel.SelectedTeamName}...");
+            await Task.Delay(100);
+            var client = GetApi();
+            var teamStories = client.StoriesTeam(_viewModel.SelectedTeam.Id);
+            logger.Log($"{teamStories.Count()} stories loaded.");
+
+            foreach (var f in _viewModel.FileList.Where(fi => fi.IsSelected == true))
+            {
+                logger.Log($"Processing {f.FileName}");
+                await Task.Delay(100);
+
+                // does the risk story already exist?
+                var ts = teamStories.FirstOrDefault(s => s.Name == f.Name);
+
+                string storyId = null;
+                if (ts == null)
+                {
+                    // does not exist so create
+                    logger.Log($"Creating {f.Name} from Template '{_viewModel.SelectedTemplateName}'");
+                    await Task.Delay(100);
+
+                    var s = client.NewStory(f.Name, _viewModel.SelectedTemplateStory.Id);
+                    s.StoryAsRoadmap.TeamID = _viewModel.SelectedTeam.Id;
+                    s.StoryAsRoadmap.ImageID = new Guid(_viewModel.SelectedTemplateStory.ImageId);
+                    s.Save();
+
+                    storyId = s.Id;
+                    logger.Log($"{f.FileName} created '{_viewModel.SelectedTemplateName}'");
+                    await Task.Delay(100);
+                }
+                else
+                {
+                    storyId = ts.Id;
+                }
+
+                // now ready to load story and update
+                if (!string.IsNullOrEmpty(storyId))
+                {
+                    logger.Log($"Loading {f.Name}''");
+                    await Task.Delay(100);
+                    var story = client.LoadStory(storyId);
+
+                    RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger);
+                    story.Save();
+                }
+
+
+            }
+
+            await Task.Delay(1000);
+
+            _viewModel.ShowWaitForm = false;
+        }
+
     }
 }

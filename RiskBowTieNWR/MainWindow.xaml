@@ -7,7 +7,7 @@
         xmlns:viewModels="clr-namespace:RiskBowTieNWR.ViewModels"
         xmlns:converters="clr-namespace:RiskBowTieNWR.Converters"
         mc:Ignorable="d"
-        Title="SharpCloud Risk Bow Tie for NetworkRail v1.0" Height="350" Width="525" Background="#000000" FontSize="18">
+        Title="SharpCloud Risk Bow Tie for NetworkRail v1.0" Height="650" Width="925" Background="#000000" FontSize="18">
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>
@@ -27,7 +27,7 @@
             </StackPanel>
         </Grid>
 
-        <TabControl Background="#333333" x:Name="mainTab">
+        <TabControl Background="#333333" x:Name="mainTab" SelectionChanged="mainTab_SelectionChanged">
             <TabControl.Resources>
                 <Style TargetType="TabControl">
                     <Setter Property="IsTabStop" Value="False"/>
@@ -88,7 +88,7 @@
                         <CheckBox Foreground="#FF00AFFC" IsChecked="{Binding RememberPassword}" Margin="105,0">Remember password</CheckBox>
                         <Button HorizontalAlignment="Right" Content=" Clear " Margin="5,0"  Background="#00AFFC" Foreground="White" Click="ClickClearPassword"/>
                     </Grid>
-                    <Button Content="Save and validate" Width="300" HorizontalAlignment="Left" Margin="105,5,5,5"  Background="#00AFFC" Foreground="White"  Click="SaveAndValidateCLick"></Button>
+                    <Button Content="Save and validate" Width="300" HorizontalAlignment="Left" Margin="105,5,5,5" Background="#00AFFC" Foreground="White"  Click="SaveAndValidateCLick"></Button>
                 </StackPanel>
 
             </TabItem>
@@ -129,6 +129,31 @@
                     <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding SelectedDataFolder}" TextWrapping="Wrap"/>
                 </Grid>
 
+            </TabItem>
+            <TabItem Header="Risk Stories">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding SelectedDataFolder}" Margin="10" FontSize="12"/>
+                    <ListBox ItemsSource="{Binding FileList}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="listFiles" Margin="10,40,10,50" Background="#0B000000">
+                        <ListBox.ItemTemplate>
+                            <HierarchicalDataTemplate>
+                                <CheckBox Content="{Binding FileName}" Foreground="White" IsChecked="{Binding IsSelected}"/>
+                            </HierarchicalDataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <GridSplitter Grid.Column="0" VerticalAlignment="Stretch" Width="3"></GridSplitter>
+                    <StackPanel VerticalAlignment="Bottom" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="  Select All  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectAll_Click" />
+                        <Button Content="  Select None  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectNon_Click" />
+                    </StackPanel>
+
+                    <Button Grid.Column="1" Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Selected Files " Background="#00AFFC" Foreground="White" Click="ProcessFiles_Click" />
+                    <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,50,10,10" IsReadOnly="True" x:Name="loggerTextBox" Foreground="#00AFFC" Text="{Binding ProgressLogText}" FontSize="10"/>
+
+                </Grid>
             </TabItem>
         </TabControl>
         <TextBlock FontSize="10" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#00AFFC" Text="{Binding Status}" />
