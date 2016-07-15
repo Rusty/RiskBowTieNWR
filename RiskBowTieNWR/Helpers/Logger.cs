@@ -12,6 +12,8 @@ namespace RiskBowTieNWR.Helpers
     {
         private MainViewModel _vm;
 
+        public int ErrorCount { get; private set; }
+
         public Logger(MainViewModel vm)
         {
             _vm = vm;
@@ -20,8 +22,13 @@ namespace RiskBowTieNWR.Helpers
         public void Log(string message)
         {
             _vm.ShowWaitFormNow(message);
-
             _vm.ProgressLogText += $"{message}\n";
+        }
+
+        public void LogError(string message)
+        {
+            _vm.ProgressLogText += $"ERROR: {message}\n";
+            ErrorCount++;
         }
     }
 }
