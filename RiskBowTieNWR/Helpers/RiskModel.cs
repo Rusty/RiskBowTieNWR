@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace RiskBowTieNWR.Helpers
 {
     public class RiskModel
     {
+        // categories
         private const string _risk = "Risk";
         private const string _ewi = "Early Warning Indicators";
         private const string _cause = "Causes";
@@ -22,15 +24,24 @@ namespace RiskBowTieNWR.Helpers
         private const string _consequenceActions = "Consequence Control Actions";
         private static readonly string [] _categoryNames = {_causeControlActions, _causeControls, _cause, _risk, _consequence, _consequenceControls, _consequenceActions, _ewi};
 
+        private const string _attrVersion = "Version";
         private const string _attrOwner = "Owner.";
+        private const string _attrManager = "Manager";
         private const string _attrBasisOfOpinion = "Basis of Opinion";
         private const string _attrLinkedControls = "LinkedControls";
         private const string _attrLinkedControlsTypes = "LinkedControlsTypes";
-        private static readonly string[] _textFields = { _attrOwner, _attrBasisOfOpinion, _attrLinkedControls, _attrLinkedControlsTypes };
+        private const string _attrRationale = "Rationale (Overall)";
+        private const string _attrRationaleSafety = "Rationale (Safety)";
+        private const string _attrRationalePerformance = "Rationale (Performance)";
+        private const string _attrRationaleValue = "Rationale (Value/Finance)";
+        private const string _attrRationalePolitical = "Rationale (Political/Reputation)";
+        private static readonly string[] _textFields = { _attrVersion, _attrOwner, _attrManager, _attrBasisOfOpinion, _attrLinkedControls, _attrLinkedControlsTypes, _attrRationale,
+            _attrRationaleSafety, _attrRationalePerformance, _attrRationaleValue, _attrRationalePolitical};
 
         private const string _attrBaseline = "Base-line";
         private const string _attrRevision = "Revised";
-        private static readonly string[] _dateFields = { _attrBaseline, _attrRevision };
+        private const string _attrlastUpdate = "Last Update";
+        private static readonly string[] _dateFields = { _attrBaseline, _attrRevision, _attrlastUpdate };
 
         private const string _attrPercComplete = "% Complete";
         private const string _attrOrder = "SortOrder";
@@ -41,7 +52,28 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrControlOpinion = "Control Opinion";
         private const string _attrPriority = "Priority";
         private const string _attrStatus = "Status";
-        private static readonly string[] _listFields = { _attrControlOpinion, _attrPriority, _attrStatus };
+        private const string _attrClassification = "Classification";
+        private const string _attrImpactedArea = "Key Scorecard Area Impacted";
+        private const string _attrControlRating = "Control Rating";
+        private const string _attrRiskLevel = "Risk Level";
+        private const string _attrRiskAppetite = "Risk Appetite";
+        private const string _attrRiskAppetiteSafety = "Risk Appetite (Safety)";
+        private const string _attrRiskAppetitePerformance = "Risk Appetite (Performance)";
+        private const string _attrRiskAppetiteValue = "Risk Appetite (Value/Finance)";
+        private const string _attrRiskAppetitePolitical = "Risk Appetite (Political/Reputation)";
+        private static readonly string[] _listFields = { _attrControlOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel, _attrRiskAppetite, _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical };
+
+        private const string _attrLikelihood = "Likelihood (Overall)";
+        private const string _attrImpact = "Impact (Overall)";
+        private const string _attrLikelihoodSafety = "Likelihood (Safety)";
+        private const string _attrImpactSafety = "Impact (Safety)";
+        private const string _attrLikelihoodPerformance = "Likelihood (Performance)";
+        private const string _attrImpactPerformance = "Impact (Performace)";
+        private const string _attrLikelihoodValue = "Likelihood (Value/Finance)";
+        private const string _attrImpactValue = "Impact (Value/Finance)";
+        private const string _attrLikelihoodPolitical = "Likelihood (Political/Reputation)";
+        private const string _attrImpactPolitical = "Impact (Political/Reputation)";
+        private static readonly string[] _listRiskFields = { _attrLikelihood, _attrImpact, _attrLikelihoodSafety, _attrImpactSafety, _attrLikelihoodPerformance, _attrImpactPerformance, _attrLikelihoodValue, _attrImpactValue, _attrLikelihoodPolitical, _attrImpactPolitical };
 
         private static readonly string[] _listCauses = { };
         private static readonly string[] _listCausesControls = { _attrOwner, _attrControlOpinion, _attrBasisOfOpinion };
@@ -50,6 +82,8 @@ namespace RiskBowTieNWR.Helpers
         private static readonly string[] _listConsequensesControls = { _attrOwner, _attrControlOpinion, _attrBasisOfOpinion };
         private static readonly string[] _listConsequensesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrBaseline, _attrPercComplete, _attrStatus };
         private static readonly string[] _listEWI = { };
+
+        private static readonly string[] _riskLabels = {"1-Very Low", "2-Low", "3-Medium", "4-High", "5-Very High"};
 
 
         private const string _riskId = "RISK";
@@ -60,8 +94,6 @@ namespace RiskBowTieNWR.Helpers
         private const string _consequenceId = "CONSQ";
         private const string _consequenceControlsId = "CONSQ_CONTROL";
         private const string _consequenceControlActionsId = "CONSQ_ACTION";
-
-
 
         private static void EnsureStoryHasRightStructure(Story story, Logger log)
         {
@@ -74,24 +106,50 @@ namespace RiskBowTieNWR.Helpers
             foreach (var a in _textFields)
             {
                 if (story.Attribute_FindByName(a) == null)
-                    story.Attribute_Add(a, SC.API.ComInterop.Models.Attribute.AttributeType.Text);
+                    story.Attribute_Add(a, Attribute.AttributeType.Text);
             }
             foreach (var a in _dateFields)
             {
                 if (story.Attribute_FindByName(a) == null)
-                    story.Attribute_Add(a, SC.API.ComInterop.Models.Attribute.AttributeType.Date);
+                    story.Attribute_Add(a, Attribute.AttributeType.Date);
             }
             foreach (var a in _numberFields)
             {
                 if (story.Attribute_FindByName(a) == null)
-                    story.Attribute_Add(a, SC.API.ComInterop.Models.Attribute.AttributeType.Numeric);
+                    story.Attribute_Add(a, Attribute.AttributeType.Numeric);
             }
             foreach (var a in _listFields)
             {
                 if (story.Attribute_FindByName(a) == null)
-                    story.Attribute_Add(a, SC.API.ComInterop.Models.Attribute.AttributeType.List);
+                    story.Attribute_Add(a, Attribute.AttributeType.List);
             }
+            foreach (var a in _listRiskFields)
+            {
+                if (story.Attribute_FindByName(a) == null)
+                {
+                    var att = story.Attribute_Add(a, Attribute.AttributeType.List);
+                    foreach (var l in _riskLabels)
+                        att.Labels_Add(l);
+                }
+            }
+        }
 
+        public static string LookupRiskLabel(string l)
+        {
+            switch (l)
+            {
+                case "1":
+                    return _riskLabels[0];
+                case "2":
+                    return _riskLabels[1];
+                case "3":
+                    return _riskLabels[2];
+                case "4":
+                    return _riskLabels[3];
+                case "5":
+                    return _riskLabels[4];
+            }
+            return l;// notfound
         }
 
         public static async void ProcessBowTies(SharpCloudApi sc, string teamId, string portfolioId, string controlId, string temaplateId, Logger log)
@@ -213,7 +271,6 @@ namespace RiskBowTieNWR.Helpers
         }
         public static void CreateStoryFromXLTemplate(Story story, string XLFilename, Logger log)
         {
-
             EnsureStoryHasRightStructure(story, log);
 
             // get categories
@@ -226,7 +283,33 @@ namespace RiskBowTieNWR.Helpers
             var catConsequenceControl = story.Category_FindByName(_consequenceControls);
             var catConsequenceAction = story.Category_FindByName(_consequenceActions);
 
-            // get atttributes
+            // get attributes
+            var attLikelihood = story.Attribute_FindByName(_attrLikelihood);
+            var attImpact = story.Attribute_FindByName(_attrImpact);
+            var attRationale = story.Attribute_FindByName(_attrRationale);
+
+            var attLikelihoodSafety = story.Attribute_FindByName(_attrLikelihoodSafety);
+            var attImpactSafety = story.Attribute_FindByName(_attrImpactSafety);
+            var attAppetiteSafety = story.Attribute_FindByName(_attrRiskAppetiteSafety);
+            var attRationaleSafety = story.Attribute_FindByName(_attrRationaleSafety);
+
+            var attLikelihoodPerformance = story.Attribute_FindByName(_attrLikelihoodPerformance);
+            var attImpactPerformance = story.Attribute_FindByName(_attrImpactPerformance);
+            var attAppetitePerformace = story.Attribute_FindByName(_attrRiskAppetitePerformance);
+            var attRationalePerformance = story.Attribute_FindByName(_attrRationalePerformance);
+
+            var attLikelihoodValue = story.Attribute_FindByName(_attrLikelihoodValue);
+            var attImpactValue = story.Attribute_FindByName(_attrImpactValue);
+            var attAppetiteValue = story.Attribute_FindByName(_attrRiskAppetiteValue);
+            var attRationaleValue = story.Attribute_FindByName(_attrRationaleValue);
+
+            var attLikelihoodPolitical = story.Attribute_FindByName(_attrLikelihoodPolitical);
+            var attImpactPolitical = story.Attribute_FindByName(_attrImpactPolitical);
+            var attAppetitePolitical = story.Attribute_FindByName(_attrRiskAppetitePolitical);
+            var attRationalePolitical = story.Attribute_FindByName(_attrRationalePolitical);
+
+            var attControlRating = story.Attribute_FindByName(_attrControlRating);
+
             var attOwner = story.Attribute_FindByName(_attrOwner);
             var attBasisOfOpinion = story.Attribute_FindByName(_attrBasisOfOpinion);
             var attLinkedControls = story.Attribute_FindByName(_attrLinkedControls);
@@ -240,6 +323,13 @@ namespace RiskBowTieNWR.Helpers
             var attControlOpinion = story.Attribute_FindByName(_attrControlOpinion);
             var attPriority = story.Attribute_FindByName(_attrPriority);
             var attStatus = story.Attribute_FindByName(_attrStatus);
+            var attClassification = story.Attribute_FindByName(_attrClassification);
+            var attVersion = story.Attribute_FindByName(_attrVersion);
+            var attLastUpdate = story.Attribute_FindByName(_attrlastUpdate);
+            var attManager = story.Attribute_FindByName(_attrManager);
+            var attRiskLevel = story.Attribute_FindByName(_attrRiskLevel);
+
+
 
 
             var XL1 = new Application();
@@ -252,8 +342,39 @@ namespace RiskBowTieNWR.Helpers
             risk.ExternalId = _riskId;
             risk.Description = XL1.Sheets[sheet].Cells(3, 19).Text;
             risk.Category = catRisk;
-            risk.SetAttributeValue(story.Attribute_FindByName("Impact"), "3");
-            risk.SetAttributeValue(story.Attribute_FindByName("Likelihood"), "3 - Medium");
+            SetAttributeWithLogging(log, risk, attClassification, LookupRiskLabel(XL1.Sheets[sheet].Cells(2, 4).Text));
+            SetAttributeWithLogging(log, risk, attVersion, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 4).Text));
+            SetAttributeWithLogging(log, risk, attLastUpdate, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 5).Text));
+            SetAttributeWithLogging(log, risk, attOwner, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 6).Text));
+            SetAttributeWithLogging(log, risk, attManager, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 7).Text));
+            SetAttributeWithLogging(log, risk, attManager, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 7).Text));
+
+            SetAttributeWithLogging(log, risk, attControlRating, LookupRiskLabel(XL1.Sheets[sheet].Cells(16, 8).Text));
+            SetAttributeWithLogging(log, risk, attRiskLevel, LookupRiskLabel(XL1.Sheets[sheet].Cells(3, 16).Text));
+
+            SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
+            SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
+            SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
+            SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
+
+            SetAttributeWithLogging(log, risk, attLikelihoodPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 37).Text));
+            SetAttributeWithLogging(log, risk, attImpactPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 35).Text));
+            SetAttributeWithLogging(log, risk, attAppetitePerformace, XL1.Sheets[sheet].Cells(27, 35).Text);
+            SetAttributeWithLogging(log, risk, attRationalePerformance, XL1.Sheets[sheet].Cells(25, 19).Text);
+
+            SetAttributeWithLogging(log, risk, attLikelihoodValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 37).Text));
+            SetAttributeWithLogging(log, risk, attImpactValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 35).Text));
+            SetAttributeWithLogging(log, risk, attAppetiteValue, XL1.Sheets[sheet].Cells(32, 35).Text);
+            SetAttributeWithLogging(log, risk, attRationaleValue, XL1.Sheets[sheet].Cells(30, 19).Text);
+
+            SetAttributeWithLogging(log, risk, attLikelihoodPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 37).Text));
+            SetAttributeWithLogging(log, risk, attImpactPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 35).Text));
+            SetAttributeWithLogging(log, risk, attAppetitePolitical, XL1.Sheets[sheet].Cells(37, 35).Text);
+            SetAttributeWithLogging(log, risk, attRationalePolitical, XL1.Sheets[sheet].Cells(35, 19).Text);
+
+
+            //risk.SetAttributeValue(story.Attribute_FindByName("Impact"), "3");
+            //risk.SetAttributeValue(story.Attribute_FindByName("Likelihood"), "3 - Medium");
 
             Item item;
             string extId;
@@ -514,7 +635,9 @@ namespace RiskBowTieNWR.Helpers
         {
             try
             {
+                Debug.WriteLine($"{att.Name} {value}");
                 item.SetAttributeValue(att, value);
+                Debug.WriteLine($"{att.Name} {item.GetAttributeValueAsText(att)}");
             }
             catch (Exception e)
             {
