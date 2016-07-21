@@ -65,6 +65,17 @@ namespace RiskBowTieNWR.ViewModels
         }
         private string _progressLogText;
 
+        public string ProgressLogText2
+        {
+            get { return _progressLogText2; }
+            set
+            {
+                _progressLogText2 = value;
+                OnPropertyChanged("ProgressLogText2");
+            }
+        }
+        private string _progressLogText2;
+
         public bool RememberPassword 
         { get { return _rememberPassword; }
             set

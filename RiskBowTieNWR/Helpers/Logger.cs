@@ -12,23 +12,47 @@ namespace RiskBowTieNWR.Helpers
     {
         private MainViewModel _vm;
 
+        private int _textMode = 0;
+
         public int ErrorCount { get; private set; }
 
-        public Logger(MainViewModel vm)
+        public Logger(MainViewModel vm, int textMode = 0)
         {
             _vm = vm;
+            _textMode = textMode;
         }
 
         public void Log(string message)
         {
             _vm.ShowWaitFormNow(message);
-            _vm.ProgressLogText += $"{message}\n";
+            SetMessage(message);
         }
 
         public void LogError(string message)
         {
-            _vm.ProgressLogText += $"ERROR: {message}\n";
+            SetMessage($"ERROR: {message}\n");
             ErrorCount++;
+        }
+
+        public void HideProgress()
+        {
+            _vm.ShowWaitForm = false;
+        }
+
+        private void SetMessage(string message)
+        {
+            switch (_textMode)
+            {
+                case 0:
+                case 1:
+                    _vm.ProgressLogText += $"{message}\n";
+                    break;
+                case 2:
+                    _vm.ProgressLogText2 += $"{message}\n";
+                    break;
+                default:
+                    throw new Exception("Unknown Log type");
+            }
         }
     }
 }

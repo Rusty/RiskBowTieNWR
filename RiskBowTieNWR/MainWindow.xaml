@@ -155,6 +155,16 @@
 
                 </Grid>
             </TabItem>
+            <TabItem Header="Rollup">
+                <Grid>
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Orientation="Horizontal">
+                        <CheckBox x:Name="chkControl" IsChecked="True" Content="Build Control Library" Foreground="White" Margin="10"/>
+                        <CheckBox x:Name="chkPortfolio" IsChecked="True" Content="Build Control Library" Foreground="White" Margin="10"/>
+                        <Button Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Now " Background="#00AFFC" Foreground="White" Click="ProcessPortfolio_Click" />
+                    </StackPanel>
+                    <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,50,10,10" IsReadOnly="True" Foreground="#00AFFC" Text="{Binding ProgressLogText2}" FontSize="10"/>
+                </Grid>
+            </TabItem>
         </TabControl>
         <TextBlock FontSize="10" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#00AFFC" Text="{Binding Status}" />
         <!--<TextBox  FontSize="8" Grid.Row="2" MaxHeight="100" HorizontalAlignment="Center" VerticalAlignment="Center" VerticalScrollBarVisibility="Auto" Foreground="Cyan" Text="{Binding Logs}" IsReadOnly="True" Background="Transparent"/>-->

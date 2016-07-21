@@ -172,7 +172,26 @@ namespace RiskBowTieNWR
             }
 
             ProcessSelectedFiles();
+        }
 
+        private void ProcessPortfolio_Click(object sender, RoutedEventArgs e)
+        {
+            ProcessPortfolio();
+        }
+
+        private async void ProcessPortfolio()
+        {
+            _viewModel.ProgressLogText2 = ""; // clear
+            var logger = new Logger(_viewModel, 2);
+
+            // find list of stories for selected team
+            logger.Log($"Reading Existing Stories in {_viewModel.SelectedTeamName}...");
+            await Task.Delay(100);
+            var client = GetApi();
+
+            RiskModel.ProcessBowTies(client, _viewModel.SelectedTeam.Id, _viewModel.SelectedPortfolioStory.Id,
+                _viewModel.SelectedControlStory.Id, _viewModel.SelectedTemplateStory.Id, logger);
+           
         }
 
         private async void ProcessSelectedFiles()
@@ -203,12 +222,20 @@ namespace RiskBowTieNWR
                     await Task.Delay(100);
 
                     var s = client.NewStory(f.Name, _viewModel.SelectedTemplateStory.Id);
-                    s.StoryAsRoadmap.TeamID = _viewModel.SelectedTeam.Id;
-                    s.StoryAsRoadmap.ImageID = new Guid(_viewModel.SelectedTemplateStory.ImageId);
-                    s.Save();
+                    if (s != null)
+                    {
+                        s.StoryAsRoadmap.TeamID = _viewModel.SelectedTeam.Id;
+                        s.StoryAsRoadmap.ImageID = new Guid(_viewModel.SelectedTemplateStory.ImageId);
+                        s.Save();
 
-                    storyId = s.Id;
-                    logger.Log($"{f.FileName} created '{_viewModel.SelectedTemplateName}'");
+                        storyId = s.Id;
+                        logger.Log($"{f.FileName} created '{_viewModel.SelectedTemplateName}'");
+                    }
+                    else
+                    {
+                        logger.LogError($"{f.FileName} was not created created from '{_viewModel.SelectedTemplateName}'");
+                    }
+
                     await Task.Delay(100);
                 }
                 else

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,12 +12,14 @@ namespace RiskBowTieNWR.Helpers
         private int Rows { get; set; }
         private int Cols { get; set; }
         private string[] Data { get; set; }
+        private string[] Colors { get; set; }
 
         private double[] ColWidths { get; set; }
 
         private void EnsureSpace()
         {
             Data = new string[Rows * Cols];
+            Colors = new string[Rows * Cols];
             ColWidths = new double[Cols];
             for (int i = 0; i < Cols; i++)
                 ColWidths[i] = 100;
@@ -24,7 +27,6 @@ namespace RiskBowTieNWR.Helpers
 
         public HTMLTable(int cols)
         {
-
             Rows = 1;
             Cols = cols;
             EnsureSpace();
@@ -37,15 +39,21 @@ namespace RiskBowTieNWR.Helpers
             EnsureSpace();
         }
 
-        public bool SetValue(int row, int col, string text)
+        public bool SetValue(int row, int col, string text, string color=null)
         {
+            //Debug.WriteLine($"test='{text}' Colour='{color}'");
+
             if (row >= Rows)
             {
-                var origdata = Data;
+                var origData = Data;
+                var origColors = Colors;
                 Rows = row + 1;
                 EnsureSpace();
-                for (int i = 0; i < origdata.Length; i++)
-                    Data[i] = origdata[i];
+                for (int i = 0; i < origData.Length; i++)
+                {
+                    Data[i] = origData[i];
+                    Colors[i] = origColors[i];
+                }
             }
 
             if (row >= 0 && row < Rows)
@@ -54,6 +62,8 @@ namespace RiskBowTieNWR.Helpers
                     int index = row * Cols + col;
 
                     Data[index] = text;
+                    if (color != null)
+                        Colors[index] = color;
                     return true;
                 }
 
@@ -128,7 +138,11 @@ namespace RiskBowTieNWR.Helpers
 
         private string GetCellHTML(int row, int col)
         {
-            return string.Format(@"<td class=""c3""><p class=""c4"">{0}</p></td>", Data[row * Cols + col]);
+            int index = row*Cols + col;
+            if (!string.IsNullOrWhiteSpace(Colors[index]))
+                return string.Format($"<td bgcolor=\"{Colors[index]}\" class=\"c3\"><p class=\"c4\">{Data[index]}</p></td>");
+
+            return string.Format($"<td class=\"c3\"><p class=\"c4\">{Data[index]}</p></td>");
         }
     }
 }

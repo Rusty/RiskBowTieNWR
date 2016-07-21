@@ -77,11 +77,20 @@ namespace RiskBowTieNWR.Helpers
 
         private static readonly string[] _listCauses = { };
         private static readonly string[] _listCausesControls = { _attrOwner, _attrControlOpinion, _attrBasisOfOpinion };
-        private static readonly string[] _listCausesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrBaseline, _attrPercComplete, _attrStatus };
+        private static readonly string[] _listCausesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrPercComplete, _attrStatus };
         private static readonly string[] _listConsequenses = { };
         private static readonly string[] _listConsequensesControls = { _attrOwner, _attrControlOpinion, _attrBasisOfOpinion };
-        private static readonly string[] _listConsequensesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrBaseline, _attrPercComplete, _attrStatus };
+        private static readonly string[] _listConsequensesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrPercComplete, _attrStatus };
         private static readonly string[] _listEWI = { };
+
+        private static readonly double[] _widthCauses = { 1 };
+        private static readonly double[] _widthCausesControls = { 0.2, 0.4, 1 };
+        private static readonly double[] _widthCausesActions = { 0.3, 0.3, 0.3, 0.3, 0.3, 0.3 };
+        private static readonly double[] _widthConsequenses = { 1 };
+        private static readonly double[] _widthConsequensesControls = { 0.3, 0.3, 0.3, 0.3 };
+        private static readonly double[] _widthConsequensesActions = { 0.3, 0.3, 0.3, 0.3, 0.3, 0.3 };
+        private static readonly double[] _widthEWI = { };
+
 
         private static readonly string[] _riskLabels = {"1-Very Low", "2-Low", "3-Medium", "4-High", "5-Very High"};
 
@@ -134,6 +143,19 @@ namespace RiskBowTieNWR.Helpers
             }
         }
 
+        public static string LookupControlOpinion(string o)
+        {
+            switch (o)
+            {
+                case "E":
+                    return "Effective";
+                case "I":
+                    return "Ineffective";
+            }
+            return o;// notfound
+        }
+
+
         public static string LookupRiskLabel(string l)
         {
             switch (l)
@@ -159,19 +181,20 @@ namespace RiskBowTieNWR.Helpers
 
             foreach (var teamStory in sc.StoriesTeam(teamId))
             {
-                if (teamStory.Id != portfolioId && teamStory.Id != temaplateId && teamStory.Id != controlId)
+                if (teamStory.Id != portfolioId && teamStory.Id != temaplateId && teamStory.Id != controlId)// && teamStory.Id == "aad81010-af26-4ba2-954a-420383fb6d1f")
                 {
                     log.Log($"Reading from '{teamStory.Name}'");
                     await Task.Delay(100);
 
-                    var riskItem = portfolioStory.Item_FindByName(teamStory.Name);
-                    if (riskItem == null)
-                        riskItem = portfolioStory.Item_AddNew(teamStory.Name, false);
+                    var riskItem = portfolioStory.Item_FindByName(teamStory.Name) ??
+                                   portfolioStory.Item_AddNew(teamStory.Name, false);
 
 
                     try
                     {
                         var story = sc.LoadStory(teamStory.Id);
+                        var riskItemSource = story.Item_FindByExternalId("RISK");
+
                         var res = riskItem.Resource_FindByName("Risk Detail");
                         if (res == null)
                             res = riskItem.Resource_AddName("Risk Detail");
@@ -186,15 +209,20 @@ namespace RiskBowTieNWR.Helpers
                         LoadPanelData(riskItem, story, _consequenceActions, _listConsequensesActions);
                         LoadPanelData(riskItem, story, _ewi, _listEWI);
 
-                        GetAttributeData(riskItem, portfolioStory, story, new[] { "Likelihood", "Impact" });
+                        if (riskItemSource != null)
+                            CopyAttributeVAlues(riskItemSource, riskItem);
+                        else
+                            log.LogError($"Could not find a risk item in {teamStory.Name}");
 
                         foreach (var item1 in story.Items)
                         {
-                            if (item1.Category.Name == "Controls")
+                            if (item1.Category.Name == _causeControls || item1.Category.Name == _consequenceControls)
                             {
                                 var cItem = controlsStory.Item_FindByName(item1.Name);
                                 if (cItem == null)
                                     cItem = controlsStory.Item_AddNew(item1.Name);
+
+                                cItem.Tag_AddNew(item1.Category.Name);
 
                                 var resC = cItem.Resource_FindByName(story.Name);
                                 if (resC == null)
@@ -208,33 +236,53 @@ namespace RiskBowTieNWR.Helpers
                     }
                     catch (Exception e)
                     {
-                        log.LogError(string.Format($"Could not open {riskItem.ExternalId}"));
+                        log.LogError(e.Message);
                     }
                 }
             }
 
+            log.Log($"Saving {portfolioStory.Name}");
             portfolioStory.Save();
+            log.Log($"Saving {controlsStory.Name}");
             controlsStory.Save();
+            await Task.Delay(1000);
+
+            log.HideProgress();
 
         }
 
-        private static void GetAttributeData(Item item, Story storyP, Story story, string[] strings)
+        private static void CopyAttributeVAlues(Item itemSource, Item itemDestination)
         {
-            foreach (var item2 in story.Items)
+            foreach (var attrib in itemSource.Story.Attributes)
             {
-                if (item2.Category.Name == "Risk")
+                if (itemSource.GetAttributeIsAssigned(attrib)) // only copy the value if its assigned
                 {
-                    foreach (var s in strings)
-                    {
-                        item.SetAttributeValue(storyP.Attribute_FindByName(s),
-                            item2.GetAttributeValueAsText(story.Attribute_FindByName(s)));
-                    }
+                    var attD = EnsureAttributeExists(attrib, itemDestination.Story);
+
+                    itemDestination.SetAttributeValue(attD, itemSource.GetAttributeValueAsText(attrib));
                 }
             }
         }
 
-        private static void LoadPanelData(Item item, Story story, string category, string[] attributes)
+        private static Attribute EnsureAttributeExists(Attribute attrib, Story destination)
         {
+            var attDest = destination.Attribute_FindByName(attrib.Name);
+            if (attDest == null)
+            {
+                attDest = destination.Attribute_Add(attrib.Name, attrib.Type);
+                foreach (var lab in attrib.Labels)
+                {
+                    attDest.Labels_Add(lab.Text, lab.Color);
+                }
+            }
+            return attDest;
+        }
+
+
+        private static void LoadPanelData(Item item, Story story, string category, string[] attributes, double[] widths = null)
+        {
+            var sortby = story.Attribute_FindByName("SortOrder");
+            
             // add attributes so it won't blow up below
             foreach (var attribute in attributes)
             {
@@ -247,18 +295,30 @@ namespace RiskBowTieNWR.Helpers
             table1.SetValue(0, col++, "Name");
             foreach (var attribute in attributes)
             {
+                if (widths != null)
+                    table1.SetColWidth(col, widths[col]);
                 table1.SetValue(0, col++, attribute);
             }
 
             int row = 1;
-            foreach (var item2 in story.Items)
+            foreach (var item2 in story.Items.OrderBy(i => i.GetAttributeValueAsDouble(sortby)))
             {
                 if (item2.Category.Name == category)
                 {
+                    //Debug.WriteLine($"Category = '{category}'");
                     col = 0;
                     table1.SetValue(row, col++, item2.Name);
+                    //Debug.WriteLine($"Item = '{item2.Name}'");
                     foreach (var attribute in attributes)
-                        table1.SetValue(row, col++, item2.GetAttributeValueAsText(story.Attribute_FindByName(attribute)));
+                    {
+                        //Debug.WriteLine($"Attrubute = '{attribute}'");
+                        var att = story.Attribute_FindByName(attribute);
+                        //Debug.WriteLine($"Attrubute.Name = '{att.Name}'");
+                        var text = item2.GetAttributeValueAsTextWithPrefixAndSuffix(att);
+                        //Debug.WriteLine($"Text = '{text}'");
+                        string color = item2.GetAttributeValueAsColorText(att);
+                        table1.SetValue(row, col++, text, color);
+                    }
                     row++;
                 }
             }
@@ -310,6 +370,7 @@ namespace RiskBowTieNWR.Helpers
 
             var attControlRating = story.Attribute_FindByName(_attrControlRating);
 
+            var attImapactedArea = story.Attribute_FindByName(_attrImpactedArea);
             var attOwner = story.Attribute_FindByName(_attrOwner);
             var attBasisOfOpinion = story.Attribute_FindByName(_attrBasisOfOpinion);
             var attLinkedControls = story.Attribute_FindByName(_attrLinkedControls);
@@ -347,11 +408,22 @@ namespace RiskBowTieNWR.Helpers
             SetAttributeWithLogging(log, risk, attLastUpdate, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 5).Text));
             SetAttributeWithLogging(log, risk, attOwner, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 6).Text));
             SetAttributeWithLogging(log, risk, attManager, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 7).Text));
-            SetAttributeWithLogging(log, risk, attManager, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 7).Text));
+
+            for (int row = 10; row <= 15; row++)
+            {
+                if (!string.IsNullOrEmpty(XL1.Sheets[sheet].Cells(row, 7).Text))
+                    SetAttributeWithLogging(log, risk, attImapactedArea, LookupRiskLabel(XL1.Sheets[sheet].Cells(row, 1).Text));
+            }
+
 
             SetAttributeWithLogging(log, risk, attControlRating, LookupRiskLabel(XL1.Sheets[sheet].Cells(16, 8).Text));
             SetAttributeWithLogging(log, risk, attRiskLevel, LookupRiskLabel(XL1.Sheets[sheet].Cells(3, 16).Text));
 
+            SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
+            SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
+            SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
+            SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
+            
             SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
             SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
             SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
@@ -372,9 +444,9 @@ namespace RiskBowTieNWR.Helpers
             SetAttributeWithLogging(log, risk, attAppetitePolitical, XL1.Sheets[sheet].Cells(37, 35).Text);
             SetAttributeWithLogging(log, risk, attRationalePolitical, XL1.Sheets[sheet].Cells(35, 19).Text);
 
-
-            //risk.SetAttributeValue(story.Attribute_FindByName("Impact"), "3");
-            //risk.SetAttributeValue(story.Attribute_FindByName("Likelihood"), "3 - Medium");
+            SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel("3")); //TODO
+            SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel("3")); //TODO
+            SetAttributeWithLogging(log, risk, attRationale, XL1.Sheets[sheet].Cells(40, 19).Text);
 
             Item item;
             string extId;
@@ -416,7 +488,7 @@ namespace RiskBowTieNWR.Helpers
                         item.Description = name;
                         item.Category = catCauseControl;
                         SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
-                        SetAttributeWithLogging(log, item, attControlOpinion, XL1.Sheets[sheet].Cells(row, 10).Text.Trim());
+                        SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
                         SetAttributeWithLogging(log, item, attBasisOfOpinion, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
@@ -481,7 +553,7 @@ namespace RiskBowTieNWR.Helpers
                         item.Description = name;
                         item.Category = catConsequenceControl;
                         SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
-                        SetAttributeWithLogging(log, item, attControlOpinion, XL1.Sheets[sheet].Cells(row, 40).Text.Trim());
+                        SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion (XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
                         SetAttributeWithLogging(log, item, attBasisOfOpinion, XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
