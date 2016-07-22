@@ -262,5 +262,9 @@ namespace RiskBowTieNWR
             _viewModel.ShowWaitForm = false;
         }
 
+        private void ViewLog_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.ShowLogFolder();
+        }
     }
 }

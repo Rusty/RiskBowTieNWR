@@ -152,6 +152,7 @@
 
                     <Button Grid.Column="1" Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Selected Files " Background="#00AFFC" Foreground="White" Click="ProcessFiles_Click" />
                     <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,50,10,10" IsReadOnly="True" x:Name="loggerTextBox" Foreground="#00AFFC" Text="{Binding ProgressLogText}" FontSize="10"/>
+                    <Button Grid.Column="1" Height="30" VerticalAlignment="Bottom" Margin="10" HorizontalAlignment="Right" Content=" View Logs " Background="#00AFFC" Foreground="White" Click="ViewLog_Click" />
 
                 </Grid>
             </TabItem>
@@ -163,6 +164,7 @@
                         <Button Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Now " Background="#00AFFC" Foreground="White" Click="ProcessPortfolio_Click" />
                     </StackPanel>
                     <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,50,10,10" IsReadOnly="True" Foreground="#00AFFC" Text="{Binding ProgressLogText2}" FontSize="10"/>
+                    <Button Height="30" VerticalAlignment="Bottom" Margin="10" HorizontalAlignment="Right" Content=" View Logs " Background="#00AFFC" Foreground="White" Click="ViewLog_Click" />
                 </Grid>
             </TabItem>
         </TabControl>

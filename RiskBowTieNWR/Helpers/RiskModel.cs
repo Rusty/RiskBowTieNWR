@@ -61,7 +61,9 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrRiskAppetitePerformance = "Risk Appetite (Performance)";
         private const string _attrRiskAppetiteValue = "Risk Appetite (Value/Finance)";
         private const string _attrRiskAppetitePolitical = "Risk Appetite (Political/Reputation)";
-        private static readonly string[] _listFields = { _attrControlOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel, _attrRiskAppetite, _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical };
+        private const string _attrReportingPriority = "Reporting Priority";
+        private static readonly string[] _listFields = { _attrControlOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
+            _attrRiskAppetite, _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority };
 
         private const string _attrLikelihood = "Likelihood (Overall)";
         private const string _attrImpact = "Impact (Overall)";
@@ -176,6 +178,13 @@ namespace RiskBowTieNWR.Helpers
             return l;// notfound
         }
 
+        public static string GetReportingPriority(int order)
+        {
+            if (order <= 5)
+                return "High Priority";
+            return "Lower Priority";
+        }
+
         public static async void ProcessBowTies(SharpCloudApi sc, string teamId, string portfolioId, string controlId, string temaplateId, Logger log)
         {
             log.Log($"Reading Portfolio Story");
@@ -263,12 +272,15 @@ namespace RiskBowTieNWR.Helpers
                             var cItem = controlsStory.Item_FindByName(item1.Name) ??
                                         controlsStory.Item_AddNew(item1.Name);
 
+                            cItem.Description = item1.Description;
+
                             cItem.Tag_AddNew(item1.Category.Name);
                             // add any tags
                             foreach (var t in item1.Tags)
                             {
                                 cItem.Tag_AddNew(t.Text);
                             }
+
                             var val = cItem.GetAttributeValueAsDouble(attRiskCount);
                             cItem.SetAttributeValue(attRiskCount, ++val);
 
@@ -461,9 +473,7 @@ namespace RiskBowTieNWR.Helpers
             var attLastUpdate = story.Attribute_FindByName(_attrlastUpdate);
             var attManager = story.Attribute_FindByName(_attrManager);
             var attRiskLevel = story.Attribute_FindByName(_attrRiskLevel);
-
-
-
+            var attReportingPriority = story.Attribute_FindByName(_attrReportingPriority);
 
             var XL1 = new Application();
             var pathMlstn = XLFilename;
@@ -520,64 +530,78 @@ namespace RiskBowTieNWR.Helpers
             SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel("3")); //TODO
             SetAttributeWithLogging(log, risk, attRationale, XL1.Sheets[sheet].Cells(40, 19).Text);
 
+            SetAttributeWithLogging(log, risk, attReportingPriority, GetReportingPriority(0));
+
             Item item;
             string extId;
             int order;
             int counterEWI = 1;
+            string name;
+            string desc;
+            string text;
             // data can be in teh same place on 3 sheets (continuation sheets)
             for (sheet = 1; sheet <= 3; sheet++)
             {
                 // cause
                 for (int row = 23; row < 43; row += 2)
                 {
-                    string name = XL1.Sheets[sheet].Cells(row, 3).Text;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    text = XL1.Sheets[sheet].Cells(row, 3).Text;
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
+                        GetItemNameAndDescription(text, out name, out desc);
                         order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
                         extId = _causeId + $"{order:D2}";
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name.Substring(0, Math.Min(50, name.Length)), false);
+                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                         item.ExternalId = extId;
-                        item.Description = name;
+                        item.Name = name;
+                        item.Description = desc;
                         item.Category = catCause;
                         SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 16).Text);
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
+                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
-                        item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
                     }
                 }
                 // cause-control
                 for (int row = 48; row < 59; row++)
                 {
-                    string name = XL1.Sheets[sheet].Cells(row, 3).Text;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    text = XL1.Sheets[sheet].Cells(row, 3).Text;
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
+                        GetItemNameAndDescription(text, out name, out desc);
                         order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
                         extId = _causeControlsId + $"{order:D2}"; 
 
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name.Substring(0, Math.Min(50, name.Length)), false);
+                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                         item.ExternalId = extId;
-                        item.Description = name;
+                        item.Name = name;
+                        item.Description = desc;
                         item.Category = catCauseControl;
                         SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
                         SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
                         SetAttributeWithLogging(log, item, attBasisOfOpinion, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
+                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+
+                        item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
                     }
                 }
                 // cause-action
                 for (int row = 48; row < 59; row++)
                 {
-                    string name = XL1.Sheets[sheet].Cells(row, 14).Text;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    text = XL1.Sheets[sheet].Cells(row, 14).Text;
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
+                        GetItemNameAndDescription(text, out name, out desc);
                         order = GetInt(XL1.Sheets[sheet].Cells(row, 13).Text.Trim());
                         extId = _causeControlActionsId + $"{order:D2}";
 
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name.Substring(0, Math.Min(50, name.Length)), false);
+                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                         item.ExternalId = extId;
-                        item.Description = name;
+                        item.Name = name;
+                        item.Description = desc;
                         item.Category = catCauseAction;
 
                         SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 21).Text.Trim());
@@ -588,61 +612,71 @@ namespace RiskBowTieNWR.Helpers
                         SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 26).Text.Trim());
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
+                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
                     }
                 }
 
                 // consequences
                 for (int row = 23; row < 43; row += 2)
                 {
-                    string name = XL1.Sheets[sheet].Cells(row, 41).Text;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    text = XL1.Sheets[sheet].Cells(row, 41).Text;
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
+                        GetItemNameAndDescription(text, out name, out desc);
                         order = GetInt(XL1.Sheets[sheet].Cells(row, 40).Text.Trim());
                         extId = _consequenceId + $"{order:D2}";
 
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name.Substring(0, Math.Min(50, name.Length)), false);
+                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                         item.ExternalId = extId;
-                        item.Description = name;
+                        item.Name = name;
+                        item.Description = desc;
                         item.Category = catConsequence;
                         SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 56).Text);
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
+                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
-                        item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
                     }
                 }
                 // consequence-control
                 for (int row = 48; row < 59; row++)
                 {
-                    string name = XL1.Sheets[sheet].Cells(row, 33).Text;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    text = XL1.Sheets[sheet].Cells(row, 33).Text;
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
+                        GetItemNameAndDescription(text, out name, out desc);
                         order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
                         extId = _consequenceControlsId + $"{order:D2}";
 
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name.Substring(0, Math.Min(50, name.Length)), false);
+                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                         item.ExternalId = extId;
-                        item.Description = name;
+                        item.Name = name;
+                        item.Description = desc;
                         item.Category = catConsequenceControl;
                         SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
                         SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion (XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
                         SetAttributeWithLogging(log, item, attBasisOfOpinion, XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
+                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+
+                        item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
                     }
                 }
                 // consequence-action
                 for (int row = 48; row < 59; row++)
                 {
-                    string name = XL1.Sheets[sheet].Cells(row, 45).Text;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    text = XL1.Sheets[sheet].Cells(row, 45).Text;
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
+                        GetItemNameAndDescription(text, out name, out desc);
                         order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
                         extId = _consequenceControlActionsId + $"{order:D2}";
 
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name.Substring(0, Math.Min(50, name.Length)), false);
+                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                         item.ExternalId = extId;
-                        item.Description = name;
+                        item.Name = name;
+                        item.Description = desc;
                         item.Category = catConsequenceAction;
 
                         SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 53).Text.Trim());
@@ -653,20 +687,23 @@ namespace RiskBowTieNWR.Helpers
                         SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 58).Text.Trim());
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
+                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
                     }
                 }
 
                 for (int row = 9; row <= 17; row += 2)
                 {
-                    string name = XL1.Sheets[sheet].Cells(row, 22).Text;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    text = XL1.Sheets[sheet].Cells(row, 22).Text;
+                    if (!string.IsNullOrWhiteSpace(text))
                     {
+                        GetItemNameAndDescription(text, out name, out desc);
                         order = counterEWI++;
                         extId = _ewiId + $"{order:D2}";
 
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name.Substring(0, Math.Min(50, name.Length)), false);
+                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                         item.ExternalId = extId;
-                        item.Description = name;
+                        item.Name = name;
+                        item.Description = desc;
                         item.Category = catEWI;
 
                         SetAttributeWithLogging(log, item, attLinkedControlsTypes, XL1.Sheets[sheet].Cells(row, 19).Text);
@@ -676,9 +713,9 @@ namespace RiskBowTieNWR.Helpers
                         SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 37).Text);
 
                         SetAttributeWithLogging(log, item, attSortOrder, order);
+                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
                         var link = XL1.Sheets[sheet].Cells(row, 19).Text;
-                        
 
                     }
                 }
@@ -770,6 +807,22 @@ namespace RiskBowTieNWR.Helpers
             XL1.Quit();
         }
 
+        private static void GetItemNameAndDescription(string text, out string name, out string desc)
+        {
+            var split = text.Split(new string[] {"|", "."}, 2, StringSplitOptions.RemoveEmptyEntries);
+            if (split.Count() == 2)
+            {
+                name = split[0].Substring(0, Math.Min(200, split[0].Length)).Trim();
+                desc = split[1].Substring(0, Math.Min(1000, split[1].Length)).Trim();
+            }
+            else
+            {
+                name = text.Substring(0, Math.Min(200, text.Length)).Trim();
+                desc = text.Substring(0, Math.Min(1000, text.Length)).Trim();
+            }
+        }
+    
+        
         private static void SetAttributeWithLogging(Logger log, Item item, Attribute att, int value)
         {
             SetAttributeWithLogging(log, item, att, $"{value:D2}");
