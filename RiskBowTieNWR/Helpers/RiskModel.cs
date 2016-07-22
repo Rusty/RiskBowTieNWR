@@ -104,6 +104,8 @@ namespace RiskBowTieNWR.Helpers
         private const string _consequenceControlsId = "CONSQ_CONTROL";
         private const string _consequenceControlActionsId = "CONSQ_ACTION";
 
+        private const string _multipleValues = "Multiple Values";
+
         private static void EnsureStoryHasRightStructure(Story story, Logger log)
         {
             foreach (var c in _categoryNames)
@@ -176,8 +178,41 @@ namespace RiskBowTieNWR.Helpers
 
         public static async void ProcessBowTies(SharpCloudApi sc, string teamId, string portfolioId, string controlId, string temaplateId, Logger log)
         {
+            log.Log($"Reading Portfolio Story");
+            await Task.Delay(100);
             var portfolioStory = sc.LoadStory(portfolioId);
+
+            log.Log($"Reading Control Story");
+            await Task.Delay(100);
             var controlsStory = sc.LoadStory(controlId);
+
+            // make sure risk count exists
+            var _riskCount = "RiskCount";
+            var attRiskCount = controlsStory.Attribute_FindByName(_riskCount) ??
+                               controlsStory.Attribute_Add(_riskCount, Attribute.AttributeType.Numeric);
+            var attOverallControlRating = controlsStory.Attribute_FindByName(_attrControlRating) ??
+                   controlsStory.Attribute_Add(_attrControlRating, Attribute.AttributeType.List);
+
+            var attManaged = controlsStory.Attribute_FindByName(_attrControlOpinion) ??
+                   controlsStory.Attribute_Add(_attrControlOpinion, Attribute.AttributeType.List);
+            var attRiskLevel = controlsStory.Attribute_FindByName(_attrRiskLevel) ??
+                   controlsStory.Attribute_Add(_attrRiskLevel, Attribute.AttributeType.List);
+
+            /* Don't remove
+            attOverallControlRating.Labels_Delete(_multipleValues); // always removed
+            attManaged.Labels_Delete(_multipleValues); // always removed
+            */
+
+            // remove control ratings for existing controls
+            foreach (var itm in controlsStory.Items)
+            {
+                itm.RemoveAttributeValue(attManaged);
+                itm.RemoveAttributeValue(attOverallControlRating);
+                itm.RemoveAttributeValue(attRiskLevel);
+                itm.SetAttributeValue(attRiskCount, 0);
+            }
+
+
 
             foreach (var teamStory in sc.StoriesTeam(teamId))
             {
@@ -188,8 +223,7 @@ namespace RiskBowTieNWR.Helpers
 
                     var riskItem = portfolioStory.Item_FindByName(teamStory.Name) ??
                                    portfolioStory.Item_AddNew(teamStory.Name, false);
-
-
+                    
                     try
                     {
                         var story = sc.LoadStory(teamStory.Id);
@@ -210,28 +244,48 @@ namespace RiskBowTieNWR.Helpers
                         LoadPanelData(riskItem, story, _ewi, _listEWI);
 
                         if (riskItemSource != null)
-                            CopyAttributeVAlues(riskItemSource, riskItem);
+                            CopyAllAttributeValues(riskItemSource, riskItem);
                         else
                             log.LogError($"Could not find a risk item in {teamStory.Name}");
 
-                        foreach (var item1 in story.Items)
+
+                        // do the controls
+                        var attManagedControls = story.Attribute_FindByName(_attrControlOpinion) ??
+                               story.Attribute_Add(_attrControlOpinion, Attribute.AttributeType.List);
+                        var attRiskLevelControls = story.Attribute_FindByName(_attrRiskLevel) ??
+                               story.Attribute_Add(_attrRiskLevel, Attribute.AttributeType.List);
+                        var attOverallControlRatingControls = story.Attribute_FindByName(_attrControlRating) ??
+                               story.Attribute_Add(_attrControlRating, Attribute.AttributeType.List);
+
+
+                        foreach (var item1 in story.Items.Where(i => (i.Category.Name == _causeControls || i.Category.Name == _consequenceControls)))
                         {
-                            if (item1.Category.Name == _causeControls || item1.Category.Name == _consequenceControls)
+                            var cItem = controlsStory.Item_FindByName(item1.Name) ??
+                                        controlsStory.Item_AddNew(item1.Name);
+
+                            cItem.Tag_AddNew(item1.Category.Name);
+                            // add any tags
+                            foreach (var t in item1.Tags)
                             {
-                                var cItem = controlsStory.Item_FindByName(item1.Name);
-                                if (cItem == null)
-                                    cItem = controlsStory.Item_AddNew(item1.Name);
-
-                                cItem.Tag_AddNew(item1.Category.Name);
-
-                                var resC = cItem.Resource_FindByName(story.Name);
-                                if (resC == null)
-                                    resC = cItem.Resource_AddName(story.Name);
-                                resC.Description = "Control used in this risk";
-                                resC.Url = new Uri(story.Url);
+                                cItem.Tag_AddNew(t.Text);
                             }
-                        }
+                            var val = cItem.GetAttributeValueAsDouble(attRiskCount);
+                            cItem.SetAttributeValue(attRiskCount, ++val);
 
+                            var resC = cItem.Resource_FindByName(story.Name) ?? cItem.Resource_AddName(story.Name);
+                            resC.Description = "Control used in this risk";
+                            resC.Url = new Uri(story.Url);
+
+                            // risk control
+                            AddAttributeAndButCheckForDiffernce(item1, attManagedControls, cItem, attManaged);
+                            // overall risk rating
+                            AddAttributeAndButCheckForDiffernce(riskItemSource, attOverallControlRatingControls, cItem,
+                                attOverallControlRating);
+                            // overall risk Level
+                            AddAttributeAndButCheckForDiffernce(riskItemSource, attRiskLevelControls, cItem,
+                                 attRiskLevel);
+
+                        }
 
                     }
                     catch (Exception e)
@@ -251,7 +305,25 @@ namespace RiskBowTieNWR.Helpers
 
         }
 
-        private static void CopyAttributeVAlues(Item itemSource, Item itemDestination)
+        private static void AddAttributeAndButCheckForDiffernce(Item sourceItem, Attribute sourceAttrib, Item destItem, Attribute destAttrib)
+        {
+            var test = sourceItem.GetAttributeValueAsText(sourceAttrib);
+            if (destItem.GetAttributeIsAssigned(destAttrib))
+            {
+                // check values are same
+                var testDest = destItem.GetAttributeValueAsText(destAttrib);
+                if (test != testDest)
+                {
+                    destItem.SetAttributeValue(destAttrib, _multipleValues);
+                    return;
+                }
+
+            }
+            // else can set
+            destItem.SetAttributeValue(destAttrib, test);
+        }
+
+        private static void CopyAllAttributeValues(Item itemSource, Item itemDestination)
         {
             foreach (var attrib in itemSource.Story.Attributes)
             {
@@ -416,8 +488,8 @@ namespace RiskBowTieNWR.Helpers
             }
 
 
-            SetAttributeWithLogging(log, risk, attControlRating, LookupRiskLabel(XL1.Sheets[sheet].Cells(16, 8).Text));
-            SetAttributeWithLogging(log, risk, attRiskLevel, LookupRiskLabel(XL1.Sheets[sheet].Cells(3, 16).Text));
+            SetAttributeWithLogging(log, risk, attControlRating, XL1.Sheets[sheet].Cells(16, 8).Text);
+            SetAttributeWithLogging(log, risk, attRiskLevel, XL1.Sheets[sheet].Cells(3, 16).Text);
 
             SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
             SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
