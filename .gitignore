@@ -74,4 +74,5 @@ obj/
 _ReSharper*/
 [Tt]est[Rr]esult*
 packages/*
-publish/*
+*/publish/*
+RiskBowTieNWR/RiskBowTieNWR_TemporaryKey.pfx
