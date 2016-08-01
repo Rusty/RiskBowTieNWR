@@ -107,7 +107,20 @@ namespace RiskBowTieNWR
             if (sel.ShowDialog() == true)
             {
                 _viewModel.SelectedTemplateStory = new Models.StoryLite2(sel.SelectedStoryLites[0]);
+                CheckTemplate();
             }
+        }
+
+        private async void CheckTemplate()
+        {
+            var log = new Logger(_viewModel, 2);
+            log.Log($"Checking template {_viewModel.SelectedTemplateStory.Id}");
+            await Task.Delay(100);
+            var sc = GetApi();
+            var template = sc.LoadStory(_viewModel.SelectedTemplateStory.Id);
+            RiskModel.EnsureStoryHasRightStructure(template, log);
+            template.Save();
+            _viewModel.ShowWaitForm = false;
         }
 
         private void SelectPortfolio_Click(object sender, RoutedEventArgs e)
@@ -174,6 +187,16 @@ namespace RiskBowTieNWR
             ProcessSelectedFiles();
         }
 
+       private void SelectMigrate_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_viewModel.FileList.Where(f => f.IsSelected==true).Any())
+            {
+                MessageBox.Show("Please make sure you select some files from the list on the left");
+                return;
+            }
+
+            MigrateSelectedFiles();
+        }
         private void ProcessPortfolio_Click(object sender, RoutedEventArgs e)
         {
             ProcessPortfolio();
@@ -194,10 +217,40 @@ namespace RiskBowTieNWR
            
         }
 
-        private async void ProcessSelectedFiles()
+        private async void MigrateSelectedFiles()
         {
             _viewModel.ProgressLogText = ""; // clear
             var logger = new Logger(_viewModel);
+
+            System.IO.Directory.CreateDirectory(_viewModel.SelectedDataFolder + "/migrated/");
+
+
+            // find list of stories for selected team
+            foreach (var f in _viewModel.FileList.Where(fi => fi.IsSelected == true))
+            {
+                if (f.FileName[0] == '~')
+                {
+                    logger.Log($"Skipping {f.FileName}");
+                    await Task.Delay(100);
+                    continue;
+                }
+
+                logger.Log($"Processing {f.FileName}");
+                await Task.Delay(100);
+
+                RiskModel.MigrateSpreadsheet(f.FullPath, _viewModel.SelectedDataFolder + "/Template.xltm",
+                    _viewModel.SelectedDataFolder + "/migrated/" + f.FileName, logger);
+            }
+
+            await Task.Delay(1000);
+
+            _viewModel.ShowWaitForm = false;
+        }
+
+        private async void ProcessSelectedFiles()
+        {
+            _viewModel.ProgressLogText = ""; // clear
+            var logger = new Logger(_viewModel, 1);
 
             // find list of stories for selected team
             logger.Log($"Reading Existing Stories in {_viewModel.SelectedTeamName}...");
@@ -208,14 +261,20 @@ namespace RiskBowTieNWR
 
             foreach (var f in _viewModel.FileList.Where(fi => fi.IsSelected == true))
             {
+                if (f.FileName[0] == '~')
+                {
+                    logger.Log($"Skipping {f.FileName}");
+                    await Task.Delay(100);
+                    continue;
+                }
+
                 logger.Log($"Processing {f.FileName}");
                 await Task.Delay(100);
 
                 // does the risk story already exist?
-                var ts = teamStories.FirstOrDefault(s => s.Name == f.Name);
 
-                string storyId = null;
-                if (ts == null)
+                string storyId = RiskModel.GetExcelTemplateStoryID(f.FullPath, logger);
+                if (string.IsNullOrEmpty(storyId))
                 {
                     // does not exist so create
                     logger.Log($"Creating {f.Name} from Template '{_viewModel.SelectedTemplateName}'");
@@ -224,11 +283,27 @@ namespace RiskBowTieNWR
                     var s = client.NewStory(f.Name, _viewModel.SelectedTemplateStory.Id);
                     if (s != null)
                     {
-                        s.StoryAsRoadmap.TeamID = _viewModel.SelectedTeam.Id;
-                        s.StoryAsRoadmap.ImageID = new Guid(_viewModel.SelectedTemplateStory.ImageId);
-                        s.Save();
+                        try
+                        {
+                            s.StoryAsRoadmap.TeamID = _viewModel.SelectedTeam.Id;
+                            s.StoryAsRoadmap.ImageID = new Guid(_viewModel.SelectedTemplateStory.ImageId);
+                            s.Save();
+                            storyId = s.Id;
+                        }
+                        catch (Exception e1)
+                        {
+                            logger.LogError($"Unable to create story from file '{f.Name}' - {e1.Message}");
+                        }
 
-                        storyId = s.Id;
+                        try
+                        {
+                            RiskModel.SetExcelTemplateStoryID(storyId, f.FullPath, logger);
+                        }
+                        catch (Exception e2)
+                        {
+                            logger.LogError($"Unable to update excel storyID '{storyId}' - {e2.Message}");
+                        }
+
                         logger.Log($"{f.FileName} created '{_viewModel.SelectedTemplateName}'");
                     }
                     else
@@ -238,20 +313,23 @@ namespace RiskBowTieNWR
 
                     await Task.Delay(100);
                 }
-                else
-                {
-                    storyId = ts.Id;
-                }
 
                 // now ready to load story and update
                 if (!string.IsNullOrEmpty(storyId))
                 {
-                    logger.Log($"Loading {f.Name}''");
+                    logger.Log($"Loading story id '{storyId}'");
                     await Task.Delay(100);
-                    var story = client.LoadStory(storyId);
-
-                    RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger);
-                    story.Save();
+                    try
+                    {
+                        var story = client.LoadStory(storyId);
+                        RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger);
+                        story.Save();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError($"Unable to load story '{storyId}'");
+                        await Task.Delay(100);
+                    }
                 }
 
 
@@ -261,6 +339,7 @@ namespace RiskBowTieNWR
 
             _viewModel.ShowWaitForm = false;
         }
+
 
         private void ViewLog_Click(object sender, RoutedEventArgs e)
         {

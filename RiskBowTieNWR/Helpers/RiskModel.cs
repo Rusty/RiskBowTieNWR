@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Office.Interop.Excel;
@@ -62,8 +63,12 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrRiskAppetiteValue = "Risk Appetite (Value/Finance)";
         private const string _attrRiskAppetitePolitical = "Risk Appetite (Political/Reputation)";
         private const string _attrReportingPriority = "Reporting Priority";
+        private const string _attrDirectorate = "Directorate";
+        private const string _attrGrossRating = "Gross Rating";
+        private const string _attrTargetRating = "Target Rating";
         private static readonly string[] _listFields = { _attrControlOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
-            _attrRiskAppetite, _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority };
+            _attrRiskAppetite, _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority, _attrDirectorate,
+            _attrGrossRating,  _attrTargetRating  };
 
         private const string _attrLikelihood = "Likelihood (Overall)";
         private const string _attrImpact = "Impact (Overall)";
@@ -75,7 +80,15 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrImpactValue = "Impact (Value/Finance)";
         private const string _attrLikelihoodPolitical = "Likelihood (Political/Reputation)";
         private const string _attrImpactPolitical = "Impact (Political/Reputation)";
-        private static readonly string[] _listRiskFields = { _attrLikelihood, _attrImpact, _attrLikelihoodSafety, _attrImpactSafety, _attrLikelihoodPerformance, _attrImpactPerformance, _attrLikelihoodValue, _attrImpactValue, _attrLikelihoodPolitical, _attrImpactPolitical };
+        private const string _attrGrossImpact = "Gross Impact";
+        private const string _attrGrossLkelihood = "Gross Likelihood";
+        private const string _attrGrossFinance = "Gross Finance";
+        private const string _attrTargetImpact = "Target Impact";
+        private const string _attrTargetLkelihood = "Target Likelihood";
+        private const string _attrTargetFinance = "Target Finance";
+        private static readonly string[] _listRiskFields = { _attrLikelihood, _attrImpact, _attrLikelihoodSafety, _attrImpactSafety, _attrLikelihoodPerformance, _attrImpactPerformance,
+            _attrLikelihoodValue, _attrImpactValue, _attrLikelihoodPolitical, _attrImpactPolitical,
+             _attrGrossImpact, _attrGrossLkelihood, _attrGrossFinance, _attrTargetImpact, _attrTargetLkelihood, _attrTargetFinance};
 
         private static readonly string[] _listCauses = { };
         private static readonly string[] _listCausesControls = { _attrOwner, _attrControlOpinion, _attrBasisOfOpinion };
@@ -108,47 +121,69 @@ namespace RiskBowTieNWR.Helpers
 
         private const string _multipleValues = "Multiple Values";
 
-        private static void EnsureStoryHasRightStructure(Story story, Logger log)
+        public static void EnsureStoryHasRightStructure(Story story, Logger log)
         {
+            // make sure all categories we need exist
             foreach (var c in _categoryNames)
             {
                 if (story.Category_FindByName(c) == null) // catagory does not exist
+                {
+                    log.Log($"Adding Category '{c}'");
                     story.Category_AddNew(c);
+                }
             }
-
+            // make sure all attributes we need exist
             foreach (var a in _textFields)
             {
                 if (story.Attribute_FindByName(a) == null)
+                {
+                    log.Log($"Adding Text Attribute '{a}'");
                     story.Attribute_Add(a, Attribute.AttributeType.Text);
+                }
             }
             foreach (var a in _dateFields)
             {
                 if (story.Attribute_FindByName(a) == null)
+                {
+                    log.Log($"Adding Date Attribute '{a}'");
                     story.Attribute_Add(a, Attribute.AttributeType.Date);
+                }
             }
             foreach (var a in _numberFields)
             {
                 if (story.Attribute_FindByName(a) == null)
+                {
+                    log.Log($"Adding Number Attribute '{a}'");
                     story.Attribute_Add(a, Attribute.AttributeType.Numeric);
+                }
             }
             foreach (var a in _listFields)
             {
                 if (story.Attribute_FindByName(a) == null)
+                {
+                    log.Log($"Adding List Attribute '{a}'");
                     story.Attribute_Add(a, Attribute.AttributeType.List);
+                }
             }
+            // reserved list attributes need VL,L,M,H,VH values
             foreach (var a in _listRiskFields)
             {
                 if (story.Attribute_FindByName(a) == null)
                 {
+                    log.Log($"Adding List Attribute '{a}'");
                     var att = story.Attribute_Add(a, Attribute.AttributeType.List);
                     foreach (var l in _riskLabels)
+                    {
+                        log.Log($"Adding List Label '{l}'");
                         att.Labels_Add(l);
+                    }
                 }
             }
         }
 
         public static string LookupControlOpinion(string o)
         {
+            // Converts 'E' or 'I' to full word
             switch (o)
             {
                 case "E":
@@ -162,6 +197,7 @@ namespace RiskBowTieNWR.Helpers
 
         public static string LookupRiskLabel(string l)
         {
+            // converts 1,2,3,4,5 to 1-Very Low etc.
             switch (l)
             {
                 case "1":
@@ -180,13 +216,28 @@ namespace RiskBowTieNWR.Helpers
 
         public static string GetReportingPriority(int order)
         {
+            // makes sure top 5 items are reported as high priority (for filtering)    
             if (order <= 5)
                 return "High Priority";
             return "Lower Priority";
         }
 
+        public static string GetShortenedDirectorate(string str)
+        {
+            str = str.Replace("&", "").Replace("  ", " ");
+
+            var words = str.Split(' ');
+
+            return words.Where(w => w.Length >= 1).Aggregate("", (current, w) => current + w[0]);
+        }
+
+
+        private const string _strRiskRelatedStory = "Risk related story";
+        private const string _strRiskControlInstance = "Instance of this control";
+        
         public static async void ProcessBowTies(SharpCloudApi sc, string teamId, string portfolioId, string controlId, string temaplateId, Logger log)
         {
+            // combine all bowtie stories 
             log.Log($"Reading Portfolio Story");
             await Task.Delay(100);
             var portfolioStory = sc.LoadStory(portfolioId);
@@ -197,15 +248,17 @@ namespace RiskBowTieNWR.Helpers
 
             // make sure risk count exists
             var _riskCount = "RiskCount";
-            var attRiskCount = controlsStory.Attribute_FindByName(_riskCount) ??
+            var attRiskCountControlStory = controlsStory.Attribute_FindByName(_riskCount) ??
                                controlsStory.Attribute_Add(_riskCount, Attribute.AttributeType.Numeric);
-            var attOverallControlRating = controlsStory.Attribute_FindByName(_attrControlRating) ??
+            var attOverallControlRatingControlStory = controlsStory.Attribute_FindByName(_attrControlRating) ??
                    controlsStory.Attribute_Add(_attrControlRating, Attribute.AttributeType.List);
 
-            var attManaged = controlsStory.Attribute_FindByName(_attrControlOpinion) ??
+            var attManagedControlStory = controlsStory.Attribute_FindByName(_attrControlOpinion) ??
                    controlsStory.Attribute_Add(_attrControlOpinion, Attribute.AttributeType.List);
-            var attRiskLevel = controlsStory.Attribute_FindByName(_attrRiskLevel) ??
+            var attRiskLevelControlStory = controlsStory.Attribute_FindByName(_attrRiskLevel) ??
                    controlsStory.Attribute_Add(_attrRiskLevel, Attribute.AttributeType.List);
+
+
 
             /* Don't remove
             attOverallControlRating.Labels_Delete(_multipleValues); // always removed
@@ -213,12 +266,23 @@ namespace RiskBowTieNWR.Helpers
             */
 
             // remove control ratings for existing controls
+
             foreach (var itm in controlsStory.Items)
             {
-                itm.RemoveAttributeValue(attManaged);
-                itm.RemoveAttributeValue(attOverallControlRating);
-                itm.RemoveAttributeValue(attRiskLevel);
-                itm.SetAttributeValue(attRiskCount, 0);
+                itm.RemoveAttributeValue(attManagedControlStory);
+                itm.RemoveAttributeValue(attOverallControlRatingControlStory);
+                itm.RemoveAttributeValue(attRiskLevelControlStory);
+                itm.SetAttributeValue(attRiskCountControlStory, 0);
+
+                // delete all resources - we will add new ones back in later
+                var list = new List<string>();
+                foreach (var res in itm.Resources)
+                {
+                    if (res.Description == _strRiskControlInstance || res.Description == _strRiskRelatedStory)
+                        list.Add(res.Id);
+                }
+                foreach(var id in list)
+                    itm.Resource_DeleteById(id);
             }
 
 
@@ -230,73 +294,100 @@ namespace RiskBowTieNWR.Helpers
                     log.Log($"Reading from '{teamStory.Name}'");
                     await Task.Delay(100);
 
-                    var riskItem = portfolioStory.Item_FindByName(teamStory.Name) ??
-                                   portfolioStory.Item_AddNew(teamStory.Name, false);
                     
                     try
                     {
                         var story = sc.LoadStory(teamStory.Id);
                         var riskItemSource = story.Item_FindByExternalId("RISK");
 
-                        var res = riskItem.Resource_FindByName("Risk Detail");
-                        if (res == null)
-                            res = riskItem.Resource_AddName("Risk Detail");
-                        res.Description = story.Name;
-                        res.Url = new Uri(story.Url);
-
-                        LoadPanelData(riskItem, story, _cause, _listCauses);
-                        LoadPanelData(riskItem, story, _causeControls, _listCausesControls);
-                        LoadPanelData(riskItem, story, _causeControlActions, _listCausesActions);
-                        LoadPanelData(riskItem, story, _consequence, _listConsequenses);
-                        LoadPanelData(riskItem, story, _consequenceControls, _listConsequensesControls);
-                        LoadPanelData(riskItem, story, _consequenceActions, _listConsequensesActions);
-                        LoadPanelData(riskItem, story, _ewi, _listEWI);
-
                         if (riskItemSource != null)
-                            CopyAllAttributeValues(riskItemSource, riskItem);
-                        else
-                            log.LogError($"Could not find a risk item in {teamStory.Name}");
-
-
-                        // do the controls
-                        var attManagedControls = story.Attribute_FindByName(_attrControlOpinion) ??
-                               story.Attribute_Add(_attrControlOpinion, Attribute.AttributeType.List);
-                        var attRiskLevelControls = story.Attribute_FindByName(_attrRiskLevel) ??
-                               story.Attribute_Add(_attrRiskLevel, Attribute.AttributeType.List);
-                        var attOverallControlRatingControls = story.Attribute_FindByName(_attrControlRating) ??
-                               story.Attribute_Add(_attrControlRating, Attribute.AttributeType.List);
-
-
-                        foreach (var item1 in story.Items.Where(i => (i.Category.Name == _causeControls || i.Category.Name == _consequenceControls)))
                         {
-                            var cItem = controlsStory.Item_FindByName(item1.Name) ??
-                                        controlsStory.Item_AddNew(item1.Name);
+                            var riskItem = portfolioStory.Item_FindByName(story.Id) ??
+                               portfolioStory.Item_AddNew(riskItemSource.Name, false);
 
-                            cItem.Description = item1.Description;
+                            riskItem.Name = riskItemSource.Name;
+                            riskItem.Description = riskItemSource.Description;
+                            riskItem.ExternalId = story.Id;
 
-                            cItem.Tag_AddNew(item1.Category.Name);
-                            // add any tags
-                            foreach (var t in item1.Tags)
+                            var attDirectorate = story.Attribute_FindByName(_attrDirectorate);
+                            var riskCategoryName = riskItemSource.GetAttributeValueAsText(attDirectorate);
+
+                            var riskCategory = portfolioStory.Category_FindByName(riskCategoryName) ??
+                                               portfolioStory.Category_AddNew(riskCategoryName);
+
+                            riskItem.Category = riskCategory;
+
+
+                            var res = riskItem.Resource_FindByName(teamStory.Name) ?? riskItem.Resource_AddName(teamStory.Name);
+                            res.Description = story.Description;
+                            res.Url = new Uri(story.Url);
+
+                            LoadPanelData(riskItem, story, _cause, _listCauses);
+                            LoadPanelData(riskItem, story, _causeControls, _listCausesControls);
+                            LoadPanelData(riskItem, story, _causeControlActions, _listCausesActions);
+                            LoadPanelData(riskItem, story, _consequence, _listConsequenses);
+                            LoadPanelData(riskItem, story, _consequenceControls, _listConsequensesControls);
+                            LoadPanelData(riskItem, story, _consequenceActions, _listConsequensesActions);
+                            LoadPanelData(riskItem, story, _ewi, _listEWI);
+
+                            if (riskItemSource != null)
+                                CopyAllAttributeValues(riskItemSource, riskItem);
+                            else
+                                log.LogError($"Could not find a risk item in {teamStory.Name}");
+
+
+                            // do the controls
+                            var attManagedControlsRiskStory = story.Attribute_FindByName(_attrControlOpinion) ??
+                                                     story.Attribute_Add(_attrControlOpinion,
+                                                         Attribute.AttributeType.List);
+                            var attRiskLevelControlsRiskStory = story.Attribute_FindByName(_attrRiskLevel) ??
+                                                       story.Attribute_Add(_attrRiskLevel, Attribute.AttributeType.List);
+                            var attOverallControlRatingControlsRiskStory = story.Attribute_FindByName(_attrControlRating) ??
+                                                                  story.Attribute_Add(_attrControlRating,
+                                                                      Attribute.AttributeType.List);
+
+
+                            foreach (
+                                var itemControlSource in
+                                    story.Items.Where(
+                                        i =>
+                                            (i.Category.Name == _causeControls ||
+                                             i.Category.Name == _consequenceControls)))
                             {
-                                cItem.Tag_AddNew(t.Text);
+                                var itemControlDestination = controlsStory.Item_FindByName(itemControlSource.Name) ??
+                                            controlsStory.Item_AddNew(itemControlSource.Name);
+
+                                itemControlDestination.Description = itemControlSource.Description;
+
+                                itemControlDestination.Tag_AddNew(itemControlSource.Category.Name);
+                                // add any tags
+                                foreach (var t in itemControlSource.Tags)
+                                {
+                                    itemControlDestination.Tag_AddNew(t.Text);
+                                }
+
+                                var resC = itemControlDestination.Resource_AddName(itemControlSource.Name);
+                                resC.Description = $"Control ising in '{story.Name}'";//"Instance of This Control";
+                                resC.Url = new Uri(itemControlSource.Url);
+
+                                var resCC = itemControlSource.Resource_AddName("Control Library");
+                                resCC.Description = "View how this control affects other risks";
+                                resCC.Url = new Uri(itemControlDestination.Url);
+
+
+                                // risk control
+                                AddAttributeButCheckForDiffernce(itemControlSource, attManagedControlsRiskStory, itemControlDestination, attManagedControlStory);
+                                // overall risk rating
+                                AddAttributeButCheckForDiffernce(riskItemSource, attOverallControlRatingControlsRiskStory, itemControlDestination, attOverallControlRatingControlStory);
+                                // overall risk Level
+                                AddAttributeButCheckForDiffernce(riskItemSource, attRiskLevelControlsRiskStory, itemControlDestination, attRiskLevelControlStory);
+
                             }
-
-                            var val = cItem.GetAttributeValueAsDouble(attRiskCount);
-                            cItem.SetAttributeValue(attRiskCount, ++val);
-
-                            var resC = cItem.Resource_FindByName(story.Name) ?? cItem.Resource_AddName(story.Name);
-                            resC.Description = "Control used in this risk";
-                            resC.Url = new Uri(story.Url);
-
-                            // risk control
-                            AddAttributeAndButCheckForDiffernce(item1, attManagedControls, cItem, attManaged);
-                            // overall risk rating
-                            AddAttributeAndButCheckForDiffernce(riskItemSource, attOverallControlRatingControls, cItem,
-                                attOverallControlRating);
-                            // overall risk Level
-                            AddAttributeAndButCheckForDiffernce(riskItemSource, attRiskLevelControls, cItem,
-                                 attRiskLevel);
-
+                            story.Save();// save resourc links
+                        }
+                        else
+                        {
+                            log.LogError($"Could not find a risk item in {teamStory.Name}");
                         }
 
                     }
@@ -307,6 +398,21 @@ namespace RiskBowTieNWR.Helpers
                 }
             }
 
+            // process control item resource panels
+            foreach (var itm in controlsStory.Items)
+            {
+                // delete all resources - we will add new ones back in later
+                var listR = new List<string>();
+                var listC = new List<string>();
+                foreach (var res in itm.Resources)
+                {
+                    if (res.Description == _strRiskControlInstance)
+                        listC.Add(res.Id);
+                    if (res.Description == _strRiskRelatedStory)
+                        listR.Add(res.Id);
+                }
+            }
+ 
             log.Log($"Saving {portfolioStory.Name}");
             portfolioStory.Save();
             log.Log($"Saving {controlsStory.Name}");
@@ -314,10 +420,9 @@ namespace RiskBowTieNWR.Helpers
             await Task.Delay(1000);
 
             log.HideProgress();
-
         }
 
-        private static void AddAttributeAndButCheckForDiffernce(Item sourceItem, Attribute sourceAttrib, Item destItem, Attribute destAttrib)
+        private static void AddAttributeButCheckForDiffernce(Item sourceItem, Attribute sourceAttrib, Item destItem, Attribute destAttrib)
         {
             var test = sourceItem.GetAttributeValueAsText(sourceAttrib);
             if (destItem.GetAttributeIsAssigned(destAttrib))
@@ -413,6 +518,35 @@ namespace RiskBowTieNWR.Helpers
             panel.Data = table1.GetHTML;
 
         }
+
+        public static string GetExcelTemplateStoryID(string XLFilename, Logger log)
+        {
+            var XL1 = new Application();
+            var pathMlstn = XLFilename;
+            log.Log($"Opening Excel Doc " + pathMlstn);
+            var wbBowTie = XL1.Workbooks.Open(pathMlstn);
+
+            var id = XL1.Sheets[1].Cells(12, 4).Text;
+
+            wbBowTie.Close(false);
+            XL1.Quit();
+            return id;
+        }
+
+        public static void SetExcelTemplateStoryID(string Id, string XLFilename, Logger log)
+        {
+            var XL1 = new Application();
+            var pathMlstn = XLFilename;
+            log.Log($"Opening Excel Doc " + pathMlstn);
+            var wbBowTie = XL1.Workbooks.Open(pathMlstn);
+
+            XL1.Sheets[1].Cells[12, 4] = Id;
+
+            wbBowTie.Close(true);
+            XL1.Quit();
+        }
+
+
         public static void CreateStoryFromXLTemplate(Story story, string XLFilename, Logger log)
         {
             EnsureStoryHasRightStructure(story, log);
@@ -452,8 +586,16 @@ namespace RiskBowTieNWR.Helpers
             var attAppetitePolitical = story.Attribute_FindByName(_attrRiskAppetitePolitical);
             var attRationalePolitical = story.Attribute_FindByName(_attrRationalePolitical);
 
-            var attControlRating = story.Attribute_FindByName(_attrControlRating);
+            var attGrossImpact = story.Attribute_FindByName(_attrGrossImpact);
+            var attGrossLikelihood = story.Attribute_FindByName(_attrGrossLkelihood);
+            var attGrossFinance = story.Attribute_FindByName(_attrGrossFinance);
+            var attGrossRating = story.Attribute_FindByName(_attrGrossRating);
+            var attTargetImpact = story.Attribute_FindByName(_attrTargetImpact);
+            var attTargetLikelihood = story.Attribute_FindByName(_attrTargetLkelihood);
+            var attTargetFinance = story.Attribute_FindByName(_attrTargetFinance);
+            var attTargetRating = story.Attribute_FindByName(_attrTargetRating);
 
+            var attControlRating = story.Attribute_FindByName(_attrControlRating);
             var attImapactedArea = story.Attribute_FindByName(_attrImpactedArea);
             var attOwner = story.Attribute_FindByName(_attrOwner);
             var attBasisOfOpinion = story.Attribute_FindByName(_attrBasisOfOpinion);
@@ -474,342 +616,392 @@ namespace RiskBowTieNWR.Helpers
             var attManager = story.Attribute_FindByName(_attrManager);
             var attRiskLevel = story.Attribute_FindByName(_attrRiskLevel);
             var attReportingPriority = story.Attribute_FindByName(_attrReportingPriority);
+            var attDirectorate = story.Attribute_FindByName(_attrDirectorate);
 
-            var XL1 = new Application();
-            var pathMlstn = XLFilename;
-            log.Log($"Opening Excel Doc " + pathMlstn);
-            var wbBowTie = XL1.Workbooks.Open(pathMlstn);
-            var sheet = 1;
 
-            Item risk = story.Item_FindByExternalId(_riskId) ?? story.Item_AddNew(XL1.Sheets[sheet].Cells(3, 4).Text, false);
-            risk.ExternalId = _riskId;
-            risk.Description = XL1.Sheets[sheet].Cells(3, 19).Text;
-            risk.Category = catRisk;
-            SetAttributeWithLogging(log, risk, attClassification, LookupRiskLabel(XL1.Sheets[sheet].Cells(2, 4).Text));
-            SetAttributeWithLogging(log, risk, attVersion, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 4).Text));
-            SetAttributeWithLogging(log, risk, attLastUpdate, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 5).Text));
-            SetAttributeWithLogging(log, risk, attOwner, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 6).Text));
-            SetAttributeWithLogging(log, risk, attManager, LookupRiskLabel(XL1.Sheets[sheet].Cells(4, 7).Text));
-
-            for (int row = 10; row <= 15; row++)
+            try
             {
-                if (!string.IsNullOrEmpty(XL1.Sheets[sheet].Cells(row, 7).Text))
-                    SetAttributeWithLogging(log, risk, attImapactedArea, LookupRiskLabel(XL1.Sheets[sheet].Cells(row, 1).Text));
+
+                var XL1 = new Application();
+                var pathMlstn = XLFilename;
+                log.Log($"Opening Excel Doc " + pathMlstn);
+                var wbBowTie = XL1.Workbooks.Open(pathMlstn);
+                var sheet = 1;
+
+                // validate template is correct version
+                var version = XL1.Sheets["Version Control"].Cells[1, 26].Text;
+                if (version != "SCApproved")
+                {
+                    log.Log($"Spreadhseet is not in the approved version, missing 'SCApproved' at Z1 in 'Version Control' ");
+                    KillProcessByMainWindowHwnd(XL1.Application.Hwnd);
+                    return;
+                }
+
+
+                // set the story name
+                var level = XL1.Sheets[sheet].Cells(3, 4).Text;
+                var directorate = XL1.Sheets[sheet].Cells(4, 4).Text;
+                var title = XL1.Sheets[sheet].Cells(5, 4).Text;
+                
+                story.Name = $"L{level}_{GetShortenedDirectorate(directorate)}_{title}";
+
+                Item risk = story.Item_FindByExternalId(_riskId) ?? story.Item_AddNew(title, false);
+                risk.ExternalId = _riskId;
+                risk.Description = XL1.Sheets[sheet].Cells(3, 19).Text;
+                risk.Category = catRisk;
+                SetAttributeWithLogging(log, risk, attClassification, XL1.Sheets[sheet].Cells(2, 4).Text);
+                SetAttributeWithLogging(log, risk, attRiskLevel, level);
+                SetAttributeWithLogging(log, risk, attDirectorate, directorate);
+
+                SetAttributeWithLogging(log, risk, attOwner, XL1.Sheets[sheet].Cells(6, 4).Text);
+                SetAttributeWithLogging(log, risk, attManager, XL1.Sheets[sheet].Cells(7, 4).Text);
+                SetAttributeWithLogging(log, risk, attImapactedArea, LookupRiskLabel(XL1.Sheets[sheet].Cells(8, 4).Text));
+                SetAttributeWithLogging(log, risk, attControlRating, XL1.Sheets[sheet].Cells(9, 4).Text);
+                SetAttributeWithLogging(log, risk, attVersion, XL1.Sheets[sheet].Cells(10, 4).Text);
+                SetAttributeWithLogging(log, risk, attLastUpdate, XL1.Sheets[sheet].Cells(11, 4).Text);
+
+                // gross
+                SetAttributeWithLogging(log, risk, attGrossImpact, LookupRiskLabel(XL1.Sheets[sheet].Cells(15, 4).Text));
+                SetAttributeWithLogging(log, risk, attGrossLikelihood, LookupRiskLabel(XL1.Sheets[sheet].Cells(15, 7).Text));
+                SetAttributeWithLogging(log, risk, attGrossFinance, LookupRiskLabel(XL1.Sheets[sheet].Cells(15, 10).Text));
+                SetAttributeWithLogging(log, risk, attGrossRating, XL1.Sheets[sheet].Cells(15, 12).Text);
+                // target
+                SetAttributeWithLogging(log, risk, attTargetImpact, LookupRiskLabel(XL1.Sheets[sheet].Cells(16, 4).Text));
+                SetAttributeWithLogging(log, risk, attTargetLikelihood, LookupRiskLabel(XL1.Sheets[sheet].Cells(16, 7).Text));
+                SetAttributeWithLogging(log, risk, attTargetFinance, LookupRiskLabel(XL1.Sheets[sheet].Cells(16, 10).Text));
+                SetAttributeWithLogging(log, risk, attTargetRating, XL1.Sheets[sheet].Cells(16, 12).Text);
+
+                SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
+                SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
+                SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
+                SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
+
+                SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
+                SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
+                SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
+                SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
+
+                SetAttributeWithLogging(log, risk, attLikelihoodPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 37).Text));
+                SetAttributeWithLogging(log, risk, attImpactPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 35).Text));
+                SetAttributeWithLogging(log, risk, attAppetitePerformace, XL1.Sheets[sheet].Cells(27, 35).Text);
+                SetAttributeWithLogging(log, risk, attRationalePerformance, XL1.Sheets[sheet].Cells(25, 19).Text);
+
+                SetAttributeWithLogging(log, risk, attLikelihoodValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 37).Text));
+                SetAttributeWithLogging(log, risk, attImpactValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 35).Text));
+                SetAttributeWithLogging(log, risk, attAppetiteValue, XL1.Sheets[sheet].Cells(32, 35).Text);
+                SetAttributeWithLogging(log, risk, attRationaleValue, XL1.Sheets[sheet].Cells(30, 19).Text);
+
+                SetAttributeWithLogging(log, risk, attLikelihoodPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 37).Text));
+                SetAttributeWithLogging(log, risk, attImpactPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 35).Text));
+                SetAttributeWithLogging(log, risk, attAppetitePolitical, XL1.Sheets[sheet].Cells(37, 35).Text);
+                SetAttributeWithLogging(log, risk, attRationalePolitical, XL1.Sheets[sheet].Cells(35, 19).Text);
+
+                SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel("3")); //TODO
+                SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel("3")); //TODO
+                SetAttributeWithLogging(log, risk, attRationale, XL1.Sheets[sheet].Cells(40, 19).Text);
+
+                SetAttributeWithLogging(log, risk, attReportingPriority, GetReportingPriority(0));
+
+                Item item;
+                string extId;
+                int order;
+                int counterEWI = 1;
+                string name;
+                string desc;
+                string text;
+                // data can be in teh same place on 3 sheets (continuation sheets)
+                for (sheet = 1; sheet <= 3; sheet++)
+                {
+                    // cause
+                    for (int row = 23; row < 43; row += 2)
+                    {
+                        text = XL1.Sheets[sheet].Cells(row, 3).Text;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            GetItemNameAndDescription(text, out name, out desc);
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
+                            extId = _causeId + $"{order:D2}";
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catCause;
+                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 16).Text);
+
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+
+                        }
+                    }
+                    // cause-control
+                    for (int row = 48; row < 59; row++)
+                    {
+                        text = XL1.Sheets[sheet].Cells(row, 3).Text;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            GetItemNameAndDescription(text, out name, out desc);
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
+                            extId = _causeControlsId + $"{order:D2}";
+
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catCauseControl;
+                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
+                            SetAttributeWithLogging(log, item, attControlOpinion,
+                                LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
+                            SetAttributeWithLogging(log, item, attBasisOfOpinion,
+                                XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
+
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+
+                            item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
+                        }
+                    }
+                    // cause-action
+                    for (int row = 48; row < 59; row++)
+                    {
+                        text = XL1.Sheets[sheet].Cells(row, 14).Text;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            GetItemNameAndDescription(text, out name, out desc);
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 13).Text.Trim());
+                            extId = _causeControlActionsId + $"{order:D2}";
+
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catCauseAction;
+
+                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 21).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 22).Text.Trim());
+                            SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 23).Text.Trim());
+                            SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 24).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPercComplete,
+                                XL1.Sheets[sheet].Cells(row, 25).Text.Trim().Replace("%", ""));
+                            SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 26).Text.Trim());
+
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+                        }
+                    }
+
+                    // consequences
+                    for (int row = 23; row < 43; row += 2)
+                    {
+                        text = XL1.Sheets[sheet].Cells(row, 41).Text;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            GetItemNameAndDescription(text, out name, out desc);
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 40).Text.Trim());
+                            extId = _consequenceId + $"{order:D2}";
+
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catConsequence;
+                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 56).Text);
+
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+
+                        }
+                    }
+                    // consequence-control
+                    for (int row = 48; row < 59; row++)
+                    {
+                        text = XL1.Sheets[sheet].Cells(row, 33).Text;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            GetItemNameAndDescription(text, out name, out desc);
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
+                            extId = _consequenceControlsId + $"{order:D2}";
+
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catConsequenceControl;
+                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
+                            SetAttributeWithLogging(log, item, attControlOpinion,
+                                LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
+                            SetAttributeWithLogging(log, item, attBasisOfOpinion,
+                                XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
+
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+
+                            item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
+                        }
+                    }
+                    // consequence-action
+                    for (int row = 48; row < 59; row++)
+                    {
+                        text = XL1.Sheets[sheet].Cells(row, 45).Text;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            GetItemNameAndDescription(text, out name, out desc);
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
+                            extId = _consequenceControlActionsId + $"{order:D2}";
+
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catConsequenceAction;
+
+                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 53).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 54).Text.Trim());
+                            SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 55).Text.Trim());
+                            SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 56).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPercComplete,
+                                XL1.Sheets[sheet].Cells(row, 57).Text.Trim().Replace("%", ""));
+                            SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 58).Text.Trim());
+
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+                        }
+                    }
+
+                    for (int row = 9; row <= 17; row += 2)
+                    {
+                        text = XL1.Sheets[sheet].Cells(row, 22).Text;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            GetItemNameAndDescription(text, out name, out desc);
+                            order = counterEWI++;
+                            extId = _ewiId + $"{order:D2}";
+
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catEWI;
+
+                            SetAttributeWithLogging(log, item, attLinkedControlsTypes,
+                                XL1.Sheets[sheet].Cells(row, 19).Text);
+                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 21).Text);
+
+                            SetAttributeWithLogging(log, item, attPrior, XL1.Sheets[sheet].Cells(row, 35).Text);
+                            SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 37).Text);
+
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+
+                            var link = XL1.Sheets[sheet].Cells(row, 19).Text;
+
+                        }
+                    }
+                }
+
+                // process the relationships for the Causes & Conseqences
+                // the template only allows for a max of 30 of each
+                for (int c = 1; c <= 30; c++)
+                {
+                    // Causes
+                    extId = _causeId + $"{c:D2}";
+                    item = story.Item_FindByExternalId(extId);
+                    if (item != null)
+                    {
+                        var rels = item.GetAttributeValueAsText(attLinkedControls);
+                        foreach (var r in rels.Split(','))
+                        {
+                            var i = GetInt(r);
+                            var ex = _causeControlsId + $"{i:D2}";
+                            var itm = story.Item_FindByExternalId(ex);
+                            if (itm != null)
+                            {
+                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                            }
+                        }
+                    }
+
+                    // Consequences
+                    extId = _consequenceId + $"{c:D2}";
+                    item = story.Item_FindByExternalId(extId);
+                    if (item != null)
+                    {
+                        var rels = item.GetAttributeValueAsText(attLinkedControls);
+                        foreach (var r in rels.Split(','))
+                        {
+                            var i = GetInt(r);
+                            var ex = _consequenceControlsId + $"{i:D2}";
+                            var itm = story.Item_FindByExternalId(ex);
+                            if (itm != null)
+                            {
+                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
+                            }
+                        }
+                    }
+
+                    // Consequences
+                    extId = _consequenceId + $"{c:D2}";
+                    item = story.Item_FindByExternalId(extId);
+                    if (item != null)
+                    {
+                        var rels = item.GetAttributeValueAsText(attLinkedControls);
+                        foreach (var r in rels.Split(','))
+                        {
+                            var i = GetInt(r);
+                            var ex = _consequenceControlsId + $"{i:D2}";
+                            var itm = story.Item_FindByExternalId(ex);
+                            if (itm != null)
+                            {
+                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
+                            }
+                        }
+                    }
+
+                    // Early Warning Indicators
+                    extId = _ewiId + $"{c:D2}";
+                    item = story.Item_FindByExternalId(extId);
+                    if (item != null)
+                    {
+                        var relType = item.GetAttributeValueAsText(attLinkedControlsTypes);
+                        var rels = item.GetAttributeValueAsText(attLinkedControls);
+                        foreach (var r in rels.Split(','))
+                        {
+                            var i = GetInt(r);
+                            var ex = _causeControlsId + $"{i:D2}";
+                            if (relType == "Conseq.")
+                                ex = _consequenceControlsId + $"{i:D2}";
+
+                            var itm = story.Item_FindByExternalId(ex);
+                            if (itm != null)
+                            {
+                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                            }
+                        }
+                    }
+
+                }
+
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+                wbBowTie.Close(false);
+                Marshal.ReleaseComObject(wbBowTie);
+
+                KillProcessByMainWindowHwnd(XL1.Application.Hwnd);
+ 
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+                GC.Collect();
+                GC.WaitForFullGCComplete();
             }
-
-
-            SetAttributeWithLogging(log, risk, attControlRating, XL1.Sheets[sheet].Cells(16, 8).Text);
-            SetAttributeWithLogging(log, risk, attRiskLevel, XL1.Sheets[sheet].Cells(3, 16).Text);
-
-            SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
-            SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
-            SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
-            SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
+            catch ( Exception ex)
+            {
+                log.LogError(ex.Message);
+            }
             
-            SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
-            SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
-            SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
-            SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
-
-            SetAttributeWithLogging(log, risk, attLikelihoodPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 37).Text));
-            SetAttributeWithLogging(log, risk, attImpactPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 35).Text));
-            SetAttributeWithLogging(log, risk, attAppetitePerformace, XL1.Sheets[sheet].Cells(27, 35).Text);
-            SetAttributeWithLogging(log, risk, attRationalePerformance, XL1.Sheets[sheet].Cells(25, 19).Text);
-
-            SetAttributeWithLogging(log, risk, attLikelihoodValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 37).Text));
-            SetAttributeWithLogging(log, risk, attImpactValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 35).Text));
-            SetAttributeWithLogging(log, risk, attAppetiteValue, XL1.Sheets[sheet].Cells(32, 35).Text);
-            SetAttributeWithLogging(log, risk, attRationaleValue, XL1.Sheets[sheet].Cells(30, 19).Text);
-
-            SetAttributeWithLogging(log, risk, attLikelihoodPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 37).Text));
-            SetAttributeWithLogging(log, risk, attImpactPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 35).Text));
-            SetAttributeWithLogging(log, risk, attAppetitePolitical, XL1.Sheets[sheet].Cells(37, 35).Text);
-            SetAttributeWithLogging(log, risk, attRationalePolitical, XL1.Sheets[sheet].Cells(35, 19).Text);
-
-            SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel("3")); //TODO
-            SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel("3")); //TODO
-            SetAttributeWithLogging(log, risk, attRationale, XL1.Sheets[sheet].Cells(40, 19).Text);
-
-            SetAttributeWithLogging(log, risk, attReportingPriority, GetReportingPriority(0));
-
-            Item item;
-            string extId;
-            int order;
-            int counterEWI = 1;
-            string name;
-            string desc;
-            string text;
-            // data can be in teh same place on 3 sheets (continuation sheets)
-            for (sheet = 1; sheet <= 3; sheet++)
-            {
-                // cause
-                for (int row = 23; row < 43; row += 2)
-                {
-                    text = XL1.Sheets[sheet].Cells(row, 3).Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        GetItemNameAndDescription(text, out name, out desc);
-                        order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
-                        extId = _causeId + $"{order:D2}";
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                        item.ExternalId = extId;
-                        item.Name = name;
-                        item.Description = desc;
-                        item.Category = catCause;
-                        SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 16).Text);
-
-                        SetAttributeWithLogging(log, item, attSortOrder, order);
-                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                    }
-                }
-                // cause-control
-                for (int row = 48; row < 59; row++)
-                {
-                    text = XL1.Sheets[sheet].Cells(row, 3).Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        GetItemNameAndDescription(text, out name, out desc);
-                        order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
-                        extId = _causeControlsId + $"{order:D2}"; 
-
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                        item.ExternalId = extId;
-                        item.Name = name;
-                        item.Description = desc;
-                        item.Category = catCauseControl;
-                        SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
-                        SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
-                        SetAttributeWithLogging(log, item, attBasisOfOpinion, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
-
-                        SetAttributeWithLogging(log, item, attSortOrder, order);
-                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                        item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
-                    }
-                }
-                // cause-action
-                for (int row = 48; row < 59; row++)
-                {
-                    text = XL1.Sheets[sheet].Cells(row, 14).Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        GetItemNameAndDescription(text, out name, out desc);
-                        order = GetInt(XL1.Sheets[sheet].Cells(row, 13).Text.Trim());
-                        extId = _causeControlActionsId + $"{order:D2}";
-
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                        item.ExternalId = extId;
-                        item.Name = name;
-                        item.Description = desc;
-                        item.Category = catCauseAction;
-
-                        SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 21).Text.Trim());
-                        SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 22).Text.Trim());
-                        SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 23).Text.Trim());
-                        SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 24).Text.Trim());
-                        SetAttributeWithLogging(log, item, attPercComplete, XL1.Sheets[sheet].Cells(row, 25).Text.Trim().Replace("%", ""));
-                        SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 26).Text.Trim());
-
-                        SetAttributeWithLogging(log, item, attSortOrder, order);
-                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-                    }
-                }
-
-                // consequences
-                for (int row = 23; row < 43; row += 2)
-                {
-                    text = XL1.Sheets[sheet].Cells(row, 41).Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        GetItemNameAndDescription(text, out name, out desc);
-                        order = GetInt(XL1.Sheets[sheet].Cells(row, 40).Text.Trim());
-                        extId = _consequenceId + $"{order:D2}";
-
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                        item.ExternalId = extId;
-                        item.Name = name;
-                        item.Description = desc;
-                        item.Category = catConsequence;
-                        SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 56).Text);
-
-                        SetAttributeWithLogging(log, item, attSortOrder, order);
-                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                    }
-                }
-                // consequence-control
-                for (int row = 48; row < 59; row++)
-                {
-                    text = XL1.Sheets[sheet].Cells(row, 33).Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        GetItemNameAndDescription(text, out name, out desc);
-                        order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
-                        extId = _consequenceControlsId + $"{order:D2}";
-
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                        item.ExternalId = extId;
-                        item.Name = name;
-                        item.Description = desc;
-                        item.Category = catConsequenceControl;
-                        SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
-                        SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion (XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
-                        SetAttributeWithLogging(log, item, attBasisOfOpinion, XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
-
-                        SetAttributeWithLogging(log, item, attSortOrder, order);
-                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                        item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
-                    }
-                }
-                // consequence-action
-                for (int row = 48; row < 59; row++)
-                {
-                    text = XL1.Sheets[sheet].Cells(row, 45).Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        GetItemNameAndDescription(text, out name, out desc);
-                        order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
-                        extId = _consequenceControlActionsId + $"{order:D2}";
-
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                        item.ExternalId = extId;
-                        item.Name = name;
-                        item.Description = desc;
-                        item.Category = catConsequenceAction;
-
-                        SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 53).Text.Trim());
-                        SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 54).Text.Trim());
-                        SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 55).Text.Trim());
-                        SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 56).Text.Trim());
-                        SetAttributeWithLogging(log, item, attPercComplete, XL1.Sheets[sheet].Cells(row, 57).Text.Trim().Replace("%", ""));
-                        SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 58).Text.Trim());
-
-                        SetAttributeWithLogging(log, item, attSortOrder, order);
-                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-                    }
-                }
-
-                for (int row = 9; row <= 17; row += 2)
-                {
-                    text = XL1.Sheets[sheet].Cells(row, 22).Text;
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        GetItemNameAndDescription(text, out name, out desc);
-                        order = counterEWI++;
-                        extId = _ewiId + $"{order:D2}";
-
-                        item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                        item.ExternalId = extId;
-                        item.Name = name;
-                        item.Description = desc;
-                        item.Category = catEWI;
-
-                        SetAttributeWithLogging(log, item, attLinkedControlsTypes, XL1.Sheets[sheet].Cells(row, 19).Text);
-                        SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 21).Text);
-
-                        SetAttributeWithLogging(log, item, attPrior, XL1.Sheets[sheet].Cells(row, 35).Text);
-                        SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 37).Text);
-
-                        SetAttributeWithLogging(log, item, attSortOrder, order);
-                        SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                        var link = XL1.Sheets[sheet].Cells(row, 19).Text;
-
-                    }
-                }
-            }
-
-            // process the relationships for the Causes & Conseqences
-            // the template only allows for a max of 30 of each
-            for (int c = 1; c <= 30; c++)
-            {
-                // Causes
-                extId = _causeId + $"{c:D2}";
-                item = story.Item_FindByExternalId(extId);
-                if (item != null)
-                {
-                    var rels = item.GetAttributeValueAsText(attLinkedControls);
-                    foreach (var r in rels.Split(','))
-                    {
-                        var i = GetInt(r);
-                        var ex = _causeControlsId + $"{i:D2}";
-                        var itm = story.Item_FindByExternalId(ex);
-                        if (itm != null)
-                        {
-                            item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
-                        }
-                    }
-                }
-
-                // Consequences
-                extId = _consequenceId + $"{c:D2}";
-                item = story.Item_FindByExternalId(extId);
-                if (item != null)
-                {
-                    var rels = item.GetAttributeValueAsText(attLinkedControls);
-                    foreach (var r in rels.Split(','))
-                    {
-                        var i = GetInt(r);
-                        var ex = _consequenceControlsId + $"{i:D2}";
-                        var itm = story.Item_FindByExternalId(ex);
-                        if (itm != null)
-                        {
-                            item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
-                        }
-                    }
-                }
-
-                // Consequences
-                extId = _consequenceId + $"{c:D2}";
-                item = story.Item_FindByExternalId(extId);
-                if (item != null)
-                {
-                    var rels = item.GetAttributeValueAsText(attLinkedControls);
-                    foreach (var r in rels.Split(','))
-                    {
-                        var i = GetInt(r);
-                        var ex = _consequenceControlsId + $"{i:D2}";
-                        var itm = story.Item_FindByExternalId(ex);
-                        if (itm != null)
-                        {
-                            item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
-                        }
-                    }
-                }
-
-                // Early Warning Indicators
-                extId = _ewiId + $"{c:D2}";
-                item = story.Item_FindByExternalId(extId);
-                if (item != null)
-                {
-                    var relType = item.GetAttributeValueAsText(attLinkedControlsTypes);
-                    var rels = item.GetAttributeValueAsText(attLinkedControls);
-                    foreach (var r in rels.Split(','))
-                    {
-                        var i = GetInt(r);
-                        var ex = _causeControlsId + $"{i:D2}";
-                        if (relType == "Conseq.")
-                            ex = _consequenceControlsId + $"{i:D2}";
-
-                        var itm = story.Item_FindByExternalId(ex);
-                        if (itm != null)
-                        {
-                            item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
-                        }
-                    }
-                }
-
-            }
-
-            wbBowTie.Close(false);
-            XL1.Quit();
         }
 
         private static void GetItemNameAndDescription(string text, out string name, out string desc)
         {
-            var split = text.Split(new string[] {"|", "."}, 2, StringSplitOptions.RemoveEmptyEntries);
+            var split = text.Split(new string[] { ";", "\r\n", "\r", "\n"}, 2, StringSplitOptions.RemoveEmptyEntries);
             if (split.Count() == 2)
             {
                 name = split[0].Substring(0, Math.Min(200, split[0].Length)).Trim();
@@ -849,6 +1041,176 @@ namespace RiskBowTieNWR.Helpers
             if (Int32.TryParse(str, out ret))
                 return ret;
             return 0;
+        }
+
+        public static void MigrateSpreadsheet(string origFile, string newTemplate, string newFile, Logger log)
+        {
+            if (origFile == newTemplate)
+            {
+                log.Log($"Skipping, files are the same");
+                return;
+            }
+
+            var XLS = new Application();
+            var pathSource = origFile;
+            log.Log($"Opening Excel Doc " + pathSource);
+
+            var wbSource = XLS.Workbooks.Open(pathSource);
+            var pathTemplate = newTemplate;
+            log.Log($"Opening Excel Doc " + pathTemplate);
+
+            var XLD = new Application();
+            var wbTemplate = XLD.Workbooks.Open(pathTemplate);
+
+            // validate template is correct version
+            var version = XLD.Sheets["Version Control"].Cells[1, 26].Text;
+            if (version != "SCApproved")
+            {
+                log.Log($"Template in not the approved version, missing 'SCApproved' at Z1 in 'Version Control' ");
+                KillProcessByMainWindowHwnd(XLS.Application.Hwnd);
+                KillProcessByMainWindowHwnd(XLD.Application.Hwnd);
+                return;
+            }
+
+
+            CopyValues(1, XLS, 2, 4, XLD, 2, 4); // Classification 
+            CopyValues(1, XLS, 3, 16, XLD, 3, 4); // Risk Level 
+            //CopyValues(1, XLS, 4, 4, XLD, 4, 4); // Category 
+            CopyValues(1, XLS, 3, 4, XLD, 5, 4); // Risk Title
+            CopyValues(1, XLS, 6, 4, XLD, 6, 4); // Risk Owner 
+            CopyValues(1, XLS, 7, 4, XLD, 7, 4); // Risk Manager
+            for (int r = 10; r <= 15; r++)
+            {
+                if (XLS.Sheets[1].Cells[r,7].Text == "a")
+                    CopyValues(1, XLS, r, 1, XLD, 8, 4); // Scorecard Area 
+            }
+
+            CopyValues(1, XLS, 16, 8, XLD, 9, 4); // Control Rating 
+            CopyValues(1, XLS, 4, 4, XLD, 10, 4); // Version  
+            CopyValues(1, XLS, 5, 4, XLD, 11, 4); // Last Update  
+            CopyValues(1, XLS, 3, 19, XLD); // risk description
+
+            // safety
+            CopyValues(1, XLS, 20, 19, XLD);
+            CopyValues(1, XLS, 20, 35, XLD);
+            CopyValues(1, XLS, 20, 37, XLD);
+            // perf
+            CopyValues(1, XLS, 25, 19, XLD);
+            CopyValues(1, XLS, 25, 35, XLD);
+            CopyValues(1, XLS, 25, 37, XLD);
+            // value
+            CopyValues(1, XLS, 30, 19, XLD);
+            CopyValues(1, XLS, 30, 35, XLD);
+            CopyValues(1, XLS, 30, 37, XLD);
+            // political
+            CopyValues(1, XLS, 35, 19, XLD);
+            CopyValues(1, XLS, 35, 35, XLD);
+            CopyValues(1, XLS, 35, 37, XLD);
+            // overall
+            CopyValues(1, XLS, 40, 19, XLD);
+
+
+            for (int sheet =1; sheet<=3; sheet++)
+            {
+                // EWI
+                for (int row = 9; row <= 17; row += 2)
+                {
+                    CopyValues(sheet, XLS, row, 19, XLD);
+                    CopyValues(sheet, XLS, row, 21, XLD);
+                    CopyValues(sheet, XLS, row, 22, XLD);
+//                    CopyValues(sheet, XLS, row, 35, XLD); // do not copy prior
+                    CopyValues(sheet, XLS, row, 37, XLD, row, 35); // move current column
+                }
+
+                for (int row = 23; row <= 41; row += 2)
+                {
+                    // causes
+                    CopyValues(sheet, XLS, row, 3, XLD);
+                    CopyValues(sheet, XLS, row, 16, XLD);
+                    //conseqeunces
+                    CopyValues(sheet, XLS, row, 41, XLD);
+                    CopyValues(sheet, XLS, row, 56, XLD);
+                }
+
+                for (int row = 48; row <= 59; row += 1)
+                {
+                    // cause controls
+                    CopyValues(sheet, XLS, row, 3, XLD);
+                    CopyValues(sheet, XLS, row, 9, XLD);
+                    CopyValues(sheet, XLS, row, 10, XLD);
+                    CopyValues(sheet, XLS, row, 11, XLD);
+
+                    // cause action
+                    CopyValues(sheet, XLS, row, 14, XLD);
+                    CopyValues(sheet, XLS, row, 21, XLD);
+                    CopyValues(sheet, XLS, row, 22, XLD);
+                    CopyValues(sheet, XLS, row, 23, XLD);
+                    CopyValues(sheet, XLS, row, 24, XLD);
+                    CopyValues(sheet, XLS, row, 25, XLD);
+                    CopyValues(sheet, XLS, row, 26, XLD);
+
+                    // consequence controls
+                    CopyValues(sheet, XLS, row, 3 + 30, XLD);
+                    CopyValues(sheet, XLS, row, 9 + 30, XLD);
+                    CopyValues(sheet, XLS, row, 10 + 30, XLD);
+                    CopyValues(sheet, XLS, row, 11 + 30, XLD);
+
+                    // conseuence actions
+                    CopyValues(sheet, XLS, row, 14 + 31, XLD);
+                    CopyValues(sheet, XLS, row, 21 + 31, XLD);
+                    CopyValues(sheet, XLS, row, 22 + 31, XLD);
+                    CopyValues(sheet, XLS, row, 23 + 31, XLD);
+                    CopyValues(sheet, XLS, row, 24 + 31, XLD);
+                    CopyValues(sheet, XLS, row, 25 + 31, XLD);
+                    CopyValues(sheet, XLS, row, 26 + 31, XLD);
+                }
+            }
+
+            GC.Collect();
+            GC.WaitForFullGCComplete();
+            wbSource.Close(false);
+            Marshal.ReleaseComObject(wbSource);
+
+            wbTemplate.SaveAs(newFile.Replace("xlsx", "xlsm"), Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled);
+
+            wbTemplate.Close(true);
+            Marshal.ReleaseComObject(wbTemplate);
+
+            KillProcessByMainWindowHwnd(XLS.Application.Hwnd);
+            KillProcessByMainWindowHwnd(XLD.Application.Hwnd);
+
+            //XLS.Quit();
+            //Marshal.ReleaseComObject(XLS);
+            //XLD.Quit();
+            //Marshal.ReleaseComObject(XLD);
+
+            GC.Collect();
+            GC.WaitForFullGCComplete();
+            GC.Collect();
+            GC.WaitForFullGCComplete();
+
+        }
+
+        private static async void CopyValues(int sheet, Application wbS, int row, int col, Application wbD)
+        {
+            CopyValues(sheet, wbS, row, col, wbD, row, col);
+        }
+
+        private static async void CopyValues(int sheet, Application wbS, int rowS, int colS, Application wbD, int rowD, int colD)
+        {
+            wbD.Sheets[sheet].Cells[rowD, colD] = wbS.Sheets[sheet].Cells[rowS, colS];
+        }
+
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        public static void KillProcessByMainWindowHwnd(int hWnd)
+        {
+            uint processID;
+            GetWindowThreadProcessId((IntPtr)hWnd, out processID);
+            if (processID == 0)
+                throw new ArgumentException("Process has not been found by the given main window handle.", "hWnd");
+            Process.GetProcessById((int)processID).Kill();
         }
     }
 }

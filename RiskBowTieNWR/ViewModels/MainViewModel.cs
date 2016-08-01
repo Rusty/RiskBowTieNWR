@@ -207,13 +207,16 @@ namespace RiskBowTieNWR.ViewModels
 
         public void LoadFileList()
         {
-            var files = System.IO.Directory.GetFiles(SelectedDataFolder, "*.xls*", SearchOption.TopDirectoryOnly);
-            var list = new ObservableCollection<FileObject>();
-            foreach (var file in files)
+            if (System.IO.Directory.Exists(SelectedDataFolder))
             {
-                list.Add( new FileObject(file) );
+                var files = System.IO.Directory.GetFiles(SelectedDataFolder, "*.xls*", SearchOption.AllDirectories);
+                var list = new ObservableCollection<FileObject>();
+                foreach (var file in files)
+                {
+                    list.Add(new FileObject(file));
+                }
+                FileList = list;
             }
-            FileList = list;
         }
 
         public StoryLite2 SelectedStory

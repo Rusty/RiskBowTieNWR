@@ -105,7 +105,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="110" />
                         <ColumnDefinition Width="40"/>
-                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="400"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Team:" />
@@ -126,7 +126,7 @@
 
                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Data Folder:" />
                     <Button Grid.Row="5" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectFolder_Click"/>
-                    <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding SelectedDataFolder}" TextWrapping="Wrap"/>
+                    <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding SelectedDataFolder}" TextWrapping="Wrap"/>
                 </Grid>
 
             </TabItem>
@@ -148,6 +148,7 @@
                     <StackPanel VerticalAlignment="Bottom" Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Content="  Select All  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectAll_Click" />
                         <Button Content="  Select None  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectNon_Click" />
+                        <Button Content="  Migrate  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectMigrate_Click" />
                     </StackPanel>
 
                     <Button Grid.Column="1" Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Selected Files " Background="#00AFFC" Foreground="White" Click="ProcessFiles_Click" />

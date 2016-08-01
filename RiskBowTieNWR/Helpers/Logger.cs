@@ -51,11 +51,13 @@ namespace RiskBowTieNWR.Helpers
             switch (_textMode)
             {
                 case 0:
+                    break;
                 case 1:
                     _vm.ProgressLogText += $"{message}\n";
                     break;
                 case 2:
                     _vm.ProgressLogText2 += $"{message}\n";
+                    break;
                     break;
                 default:
                     throw new Exception("Unknown Log type");
