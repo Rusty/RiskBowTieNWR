@@ -99,25 +99,11 @@ namespace RiskBowTieNWR.Helpers
             {
                 var widthPercent = 100 / Cols;
 
-                string data = @"
-<html><head>
-<style type=""text/css"">
-.c0 { font-family: '/SC.RoadmapViewControl;component/Fonts/Fonts.zip#Museo Sans 300'; font-size: 8px} 
-.c1 { border-collapse: collapse; width: tablewidthpercentage } 
-.c2 { width: {columnWidth}% } 
-.c3 { border-color: Black; border-style: solid; border-width: thin; padding: 0px 7px } 
-.c4 { margin: 0px } 
-</style>
-</head>
-<body class=""c0"">
-<table class=""c1"">";
-
-                data = data.Replace("tablewidthpercentage", _tableWidth);
-
-
+                string data = @"<table border=""1"" bordercolor=""#ccc"">";
+                
                 // add the columns
                 for (int c = 0; c < Cols; c++)
-                    data += string.Format("<col class=\"c2\" width={0}%/>", ColWidths[c]);
+                    data += string.Format("<col width={0}%/>", ColWidths[c]);
                 // finish the table heading
                 data += "</tr>";
 
@@ -129,7 +115,7 @@ namespace RiskBowTieNWR.Helpers
                     data += "</tr>";
                 }
 
-                data += "</table></body></html>";
+                data += "</table>";
                 data = data.Replace("{columnWidth}", widthPercent.ToString());
 
                 return data;
@@ -138,11 +124,18 @@ namespace RiskBowTieNWR.Helpers
 
         private string GetCellHTML(int row, int col)
         {
+            string boldO = "", boldC = "";
+            if (row == 0)
+            {
+                boldO = "<strong>";
+                boldC = "</strong>";
+            }
+
             int index = row*Cols + col;
             if (!string.IsNullOrWhiteSpace(Colors[index]))
-                return string.Format($"<td bgcolor=\"{Colors[index]}\" class=\"c3\"><p class=\"c4\">{Data[index]}</p></td>");
+                return string.Format($"<td style=\"background-color:{Colors[index]}; border-color: Black; border-style: solid; border-width: thin; padding: 0px 7px \"><p>{boldO}{Data[index]}{boldC}</p></td>");
 
-            return string.Format($"<td class=\"c3\"><p class=\"c4\">{Data[index]}</p></td>");
+            return string.Format($"<td style=\"border-color: Black; border-style: solid; border-width: thin; padding: 0px 7px\"><p>{boldO}{Data[index]}{boldC}</p></td>");
         }
     }
 }

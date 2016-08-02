@@ -28,7 +28,6 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrVersion = "Version";
         private const string _attrOwner = "Owner.";
         private const string _attrManager = "Manager";
-        private const string _attrBasisOfOpinion = "Basis of Opinion";
         private const string _attrLinkedControls = "LinkedControls";
         private const string _attrLinkedControlsTypes = "LinkedControlsTypes";
         private const string _attrRationale = "Rationale (Overall)";
@@ -36,7 +35,7 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrRationalePerformance = "Rationale (Performance)";
         private const string _attrRationaleValue = "Rationale (Value/Finance)";
         private const string _attrRationalePolitical = "Rationale (Political/Reputation)";
-        private static readonly string[] _textFields = { _attrVersion, _attrOwner, _attrManager, _attrBasisOfOpinion, _attrLinkedControls, _attrLinkedControlsTypes, _attrRationale,
+        private static readonly string[] _textFields = { _attrVersion, _attrOwner, _attrManager, _attrLinkedControls, _attrLinkedControlsTypes, _attrRationale,
             _attrRationaleSafety, _attrRationalePerformance, _attrRationaleValue, _attrRationalePolitical};
 
         private const string _attrBaseline = "Base-line";
@@ -51,6 +50,7 @@ namespace RiskBowTieNWR.Helpers
         private static readonly string[] _numberFields = { _attrPercComplete, _attrOrder, _attrPrior, _attrCurrent };
 
         private const string _attrControlOpinion = "Control Opinion";
+        private const string _attrBasisOfOpinion = "Basis of Opinion";
         private const string _attrPriority = "Priority";
         private const string _attrStatus = "Status";
         private const string _attrClassification = "Classification";
@@ -66,7 +66,7 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrDirectorate = "Directorate";
         private const string _attrGrossRating = "Gross Rating";
         private const string _attrTargetRating = "Target Rating";
-        private static readonly string[] _listFields = { _attrControlOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
+        private static readonly string[] _listFields = { _attrControlOpinion, _attrBasisOfOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
             _attrRiskAppetite, _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority, _attrDirectorate,
             _attrGrossRating,  _attrTargetRating  };
 
@@ -98,13 +98,13 @@ namespace RiskBowTieNWR.Helpers
         private static readonly string[] _listConsequensesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrPercComplete, _attrStatus };
         private static readonly string[] _listEWI = { };
 
-        private static readonly double[] _widthCauses = { 1 };
-        private static readonly double[] _widthCausesControls = { 0.2, 0.4, 1 };
-        private static readonly double[] _widthCausesActions = { 0.3, 0.3, 0.3, 0.3, 0.3, 0.3 };
-        private static readonly double[] _widthConsequenses = { 1 };
-        private static readonly double[] _widthConsequensesControls = { 0.3, 0.3, 0.3, 0.3 };
-        private static readonly double[] _widthConsequensesActions = { 0.3, 0.3, 0.3, 0.3, 0.3, 0.3 };
-        private static readonly double[] _widthEWI = { };
+        private static readonly double[] _widthCauses = { 100 };
+        private static readonly double[] _widthCausesControls = { 60, 20, 15, 5 };
+        private static readonly double[] _widthCausesActions = { 40, 10, 10, 10, 10, 10, 10 };
+        private static readonly double[] _widthConsequenses = { 100 };
+        private static readonly double[] _widthConsequensesControls = { 60, 20, 15, 5 };
+        private static readonly double[] _widthConsequensesActions = { 40, 10, 10, 10, 10, 10, 10 };
+        private static readonly double[] _widthEWI = { 100 };
 
 
         private static readonly string[] _riskLabels = {"1-Very Low", "2-Low", "3-Medium", "4-High", "5-Very High"};
@@ -252,12 +252,14 @@ namespace RiskBowTieNWR.Helpers
                                controlsStory.Attribute_Add(_riskCount, Attribute.AttributeType.Numeric);
             var attOverallControlRatingControlStory = controlsStory.Attribute_FindByName(_attrControlRating) ??
                    controlsStory.Attribute_Add(_attrControlRating, Attribute.AttributeType.List);
-
             var attManagedControlStory = controlsStory.Attribute_FindByName(_attrControlOpinion) ??
                    controlsStory.Attribute_Add(_attrControlOpinion, Attribute.AttributeType.List);
             var attRiskLevelControlStory = controlsStory.Attribute_FindByName(_attrRiskLevel) ??
                    controlsStory.Attribute_Add(_attrRiskLevel, Attribute.AttributeType.List);
-
+            var attBasisOfOpinionControlStory = controlsStory.Attribute_FindByName(_attrBasisOfOpinion) ??
+                   controlsStory.Attribute_Add(_attrBasisOfOpinion, Attribute.AttributeType.List);
+            var attKeyScorecardAreaControlStory = controlsStory.Attribute_FindByName(_attrImpactedArea) ??
+                               controlsStory.Attribute_Add(_attrImpactedArea, Attribute.AttributeType.List);
 
 
             /* Don't remove
@@ -272,6 +274,9 @@ namespace RiskBowTieNWR.Helpers
                 itm.RemoveAttributeValue(attManagedControlStory);
                 itm.RemoveAttributeValue(attOverallControlRatingControlStory);
                 itm.RemoveAttributeValue(attRiskLevelControlStory);
+                itm.RemoveAttributeValue(attBasisOfOpinionControlStory);
+                itm.RemoveAttributeValue(attKeyScorecardAreaControlStory);
+
                 itm.SetAttributeValue(attRiskCountControlStory, 0);
 
                 // delete all resources - we will add new ones back in later
@@ -302,7 +307,7 @@ namespace RiskBowTieNWR.Helpers
 
                         if (riskItemSource != null)
                         {
-                            var riskItem = portfolioStory.Item_FindByName(story.Id) ??
+                            var riskItem = portfolioStory.Item_FindByExternalId(story.Id) ??
                                portfolioStory.Item_AddNew(riskItemSource.Name, false);
 
                             riskItem.Name = riskItemSource.Name;
@@ -322,13 +327,13 @@ namespace RiskBowTieNWR.Helpers
                             res.Description = story.Description;
                             res.Url = new Uri(story.Url);
 
-                            LoadPanelData(riskItem, story, _cause, _listCauses);
-                            LoadPanelData(riskItem, story, _causeControls, _listCausesControls);
-                            LoadPanelData(riskItem, story, _causeControlActions, _listCausesActions);
-                            LoadPanelData(riskItem, story, _consequence, _listConsequenses);
-                            LoadPanelData(riskItem, story, _consequenceControls, _listConsequensesControls);
-                            LoadPanelData(riskItem, story, _consequenceActions, _listConsequensesActions);
-                            LoadPanelData(riskItem, story, _ewi, _listEWI);
+                            LoadPanelData(riskItem, story, _cause, _listCauses, _widthCauses);
+                            LoadPanelData(riskItem, story, _causeControls, _listCausesControls, _widthCausesControls);
+                            LoadPanelData(riskItem, story, _causeControlActions, _listCausesActions, _widthCausesActions);
+                            LoadPanelData(riskItem, story, _consequence, _listConsequenses, _widthConsequenses);
+                            LoadPanelData(riskItem, story, _consequenceControls, _listConsequensesControls, _widthConsequensesControls);
+                            LoadPanelData(riskItem, story, _consequenceActions, _listConsequensesActions, _widthConsequensesActions);
+                            LoadPanelData(riskItem, story, _ewi, _listEWI, _widthEWI);
 
                             if (riskItemSource != null)
                                 CopyAllAttributeValues(riskItemSource, riskItem);
@@ -345,6 +350,11 @@ namespace RiskBowTieNWR.Helpers
                             var attOverallControlRatingControlsRiskStory = story.Attribute_FindByName(_attrControlRating) ??
                                                                   story.Attribute_Add(_attrControlRating,
                                                                       Attribute.AttributeType.List);
+                            var attBasisOfOpinionRiskStory = story.Attribute_FindByName(_attrBasisOfOpinion) ??
+                                   controlsStory.Attribute_Add(_attrBasisOfOpinion, Attribute.AttributeType.List);
+
+                            var attScorecardAreaRiskStory = story.Attribute_FindByName(_attrImpactedArea) ??
+                                   controlsStory.Attribute_Add(_attrImpactedArea, Attribute.AttributeType.List);
 
 
                             foreach (
@@ -366,12 +376,18 @@ namespace RiskBowTieNWR.Helpers
                                     itemControlDestination.Tag_AddNew(t.Text);
                                 }
 
-                                var resC = itemControlDestination.Resource_AddName(itemControlSource.Name);
-                                resC.Description = $"Control ising in '{story.Name}'";//"Instance of This Control";
+                                var resC = itemControlDestination.Resource_FindByUrl(itemControlSource.Url);
+                                if (resC == null)
+                                    resC = itemControlDestination.Resource_AddName(itemControlSource.Id); // need to be unique
+                                resC.Name = "Usage of this control";
+                                resC.Description = $"Control used in '{story.Name}'";//"Instance of This Control";
                                 resC.Url = new Uri(itemControlSource.Url);
 
-                                var resCC = itemControlSource.Resource_AddName("Control Library");
-                                resCC.Description = "View how this control affects other risks";
+                                var resCC = itemControlSource.Resource_FindByUrl(itemControlDestination.Url);
+                                if (resCC == null)
+                                    resCC = itemControlSource.Resource_AddName(itemControlDestination.Id); // need to be unique
+                                resCC.Name = "Control Library";
+                                resCC.Description = "View this control in Control library";
                                 resCC.Url = new Uri(itemControlDestination.Url);
 
 
@@ -381,6 +397,10 @@ namespace RiskBowTieNWR.Helpers
                                 AddAttributeButCheckForDiffernce(riskItemSource, attOverallControlRatingControlsRiskStory, itemControlDestination, attOverallControlRatingControlStory);
                                 // overall risk Level
                                 AddAttributeButCheckForDiffernce(riskItemSource, attRiskLevelControlsRiskStory, itemControlDestination, attRiskLevelControlStory);
+                                // add risk basis of opinion
+                                AddAttributeButCheckForDiffernce(itemControlSource, attBasisOfOpinionRiskStory, itemControlDestination, attBasisOfOpinionControlStory);
+                                // add risk group (category)
+                                AddAttributeButCheckForDiffernce(riskItemSource, attScorecardAreaRiskStory, itemControlDestination, attKeyScorecardAreaControlStory);
 
                             }
                             story.Save();// save resourc links
@@ -1081,8 +1101,13 @@ namespace RiskBowTieNWR.Helpers
             CopyValues(1, XLS, 7, 4, XLD, 7, 4); // Risk Manager
             for (int r = 10; r <= 15; r++)
             {
-                if (XLS.Sheets[1].Cells[r,7].Text == "a")
-                    CopyValues(1, XLS, r, 1, XLD, 8, 4); // Scorecard Area 
+                if (XLS.Sheets[1].Cells[r, 7].Text == "a")
+                {
+                    string sca = XLS.Sheets[1].Cells[r, 1].Text;
+                    sca = sca.Replace("Performance", "Business Performance").Replace("Finance & Investment", "Financial Control").Replace("Asset Management", "Asset Stewardship").Replace("Satisfaction / Reputation", "Customer & Stakeholder Relationships").Replace("Additional Measures", "");
+                    XLD.Sheets[1].Cells[8, 4] = sca;
+                    //CopyValues(1, XLS, r, 1, XLD, 8, 4); // Scorecard Area 
+                }
             }
 
             CopyValues(1, XLS, 16, 8, XLD, 9, 4); // Control Rating 
