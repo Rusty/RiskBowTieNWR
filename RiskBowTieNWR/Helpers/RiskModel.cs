@@ -716,8 +716,8 @@ namespace RiskBowTieNWR.Helpers
                 SetAttributeWithLogging(log, risk, attAppetitePolitical, XL1.Sheets[sheet].Cells(37, 35).Text);
                 SetAttributeWithLogging(log, risk, attRationalePolitical, XL1.Sheets[sheet].Cells(35, 19).Text);
 
-                SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel("3")); //TODO
-                SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel("3")); //TODO
+                SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel(XL1.Sheets[sheet].Cells(2, 79).Text)); //TODO
+                SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel(XL1.Sheets[sheet].Cells(1, 79).Text)); //TODO
                 SetAttributeWithLogging(log, risk, attRationale, XL1.Sheets[sheet].Cells(40, 19).Text);
 
                 SetAttributeWithLogging(log, risk, attReportingPriority, GetReportingPriority(0));
