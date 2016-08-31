@@ -26,24 +26,26 @@ namespace RiskBowTieNWR.Helpers
         private static readonly string [] _categoryNames = {_causeControlActions, _causeControls, _cause, _risk, _consequence, _consequenceControls, _consequenceActions, _ewi};
 
         private const string _attrVersion = "Version";
-        private const string _attrOwner = "Owner.";
-        private const string _attrManager = "Manager";
-        private const string _attrLinkedControls = "LinkedControls";
-        private const string _attrLinkedControlsTypes = "LinkedControlsTypes";
+        private const string _attrRiskOwner = "Risk Owner";
+        private const string _attrControlOwner = "Control Owner";
+        private const string _attrActionOwner = "Action Owner";
+        private const string _attrManager = "Risk Manager";
+        private const string _attrLinkedControls = "Linked Controls";
+        private const string _attrLinkedControlsTypes = "Linked Control Type";
         private const string _attrRationale = "Rationale (Overall)";
         private const string _attrRationaleSafety = "Rationale (Safety)";
         private const string _attrRationalePerformance = "Rationale (Performance)";
-        private const string _attrRationaleValue = "Rationale (Value/Finance)";
+        private const string _attrRationaleValue = "Rationale (Finance/Value)";
         private const string _attrRationalePolitical = "Rationale (Political/Reputation)";
-        private static readonly string[] _textFields = { _attrVersion, _attrOwner, _attrManager, _attrLinkedControls, _attrLinkedControlsTypes, _attrRationale,
+        private static readonly string[] _textFields = { _attrVersion, _attrRiskOwner, _attrControlOwner, _attrActionOwner, _attrManager, _attrLinkedControls, _attrLinkedControlsTypes, _attrRationale,
             _attrRationaleSafety, _attrRationalePerformance, _attrRationaleValue, _attrRationalePolitical};
 
-        private const string _attrBaseline = "Base-line";
-        private const string _attrRevision = "Revised";
+        private const string _attrBaseline = "Action Baseline Due Date";
+        private const string _attrRevision = "Action Revised Due Date";
         private const string _attrlastUpdate = "Last Update";
         private static readonly string[] _dateFields = { _attrBaseline, _attrRevision, _attrlastUpdate };
 
-        private const string _attrPercComplete = "% Complete";
+        private const string _attrPercComplete = "Action % Complete";
         private const string _attrOrder = "SortOrder";
         private const string _attrPrior = "Prior";
         private const string _attrCurrent = "Current";
@@ -51,23 +53,22 @@ namespace RiskBowTieNWR.Helpers
 
         private const string _attrControlOpinion = "Control Opinion";
         private const string _attrBasisOfOpinion = "Basis of Opinion";
-        private const string _attrPriority = "Priority";
-        private const string _attrStatus = "Status";
+        private const string _attrPriority = "Action Priority";
+        private const string _attrStatus = "Action Status";
         private const string _attrClassification = "Classification";
         private const string _attrImpactedArea = "Key Scorecard Area Impacted";
-        private const string _attrControlRating = "Control Rating";
+        private const string _attrControlRating = "Overall Control Rating";
         private const string _attrRiskLevel = "Risk Level";
-        private const string _attrRiskAppetite = "Risk Appetite";
-        private const string _attrRiskAppetiteSafety = "Risk Appetite (Safety)";
-        private const string _attrRiskAppetitePerformance = "Risk Appetite (Performance)";
-        private const string _attrRiskAppetiteValue = "Risk Appetite (Value/Finance)";
-        private const string _attrRiskAppetitePolitical = "Risk Appetite (Political/Reputation)";
+        private const string _attrRiskAppetiteSafety = "Above Safety Risk Appetite";
+        private const string _attrRiskAppetitePerformance = "Above Performance Risk Appetite";
+        private const string _attrRiskAppetiteValue = "Above Finance/Value Risk Appetite";
+        private const string _attrRiskAppetitePolitical = "Above Political/Reputation Risk Appetite";
         private const string _attrReportingPriority = "Reporting Priority";
         private const string _attrDirectorate = "Directorate";
         private const string _attrGrossRating = "Gross Rating";
         private const string _attrTargetRating = "Target Rating";
         private static readonly string[] _listFields = { _attrControlOpinion, _attrBasisOfOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
-            _attrRiskAppetite, _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority, _attrDirectorate,
+            _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority, _attrDirectorate,
             _attrGrossRating,  _attrTargetRating  };
 
         private const string _attrLikelihood = "Likelihood (Overall)";
@@ -76,8 +77,8 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrImpactSafety = "Impact (Safety)";
         private const string _attrLikelihoodPerformance = "Likelihood (Performance)";
         private const string _attrImpactPerformance = "Impact (Performace)";
-        private const string _attrLikelihoodValue = "Likelihood (Value/Finance)";
-        private const string _attrImpactValue = "Impact (Value/Finance)";
+        private const string _attrLikelihoodValue = "Likelihood (Finance/Value)";
+        private const string _attrImpactValue = "Impact (Finance/Value)";
         private const string _attrLikelihoodPolitical = "Likelihood (Political/Reputation)";
         private const string _attrImpactPolitical = "Impact (Political/Reputation)";
         private const string _attrGrossImpact = "Gross Impact";
@@ -90,21 +91,23 @@ namespace RiskBowTieNWR.Helpers
             _attrLikelihoodValue, _attrImpactValue, _attrLikelihoodPolitical, _attrImpactPolitical,
              _attrGrossImpact, _attrGrossLkelihood, _attrGrossFinance, _attrTargetImpact, _attrTargetLkelihood, _attrTargetFinance};
 
+        private static readonly string _sort = "#";
+        private static readonly string _name = "Name";
         private static readonly string[] _listCauses = { };
-        private static readonly string[] _listCausesControls = { _attrOwner, _attrControlOpinion, _attrBasisOfOpinion };
-        private static readonly string[] _listCausesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrPercComplete, _attrStatus };
+        private static readonly string[] _listCausesControls = { _attrControlOwner, _attrControlOpinion, _attrBasisOfOpinion };
+        private static readonly string[] _listCausesActions = { _attrActionOwner, _attrPriority, _attrBaseline, _attrPercComplete, _attrStatus };
         private static readonly string[] _listConsequenses = { };
-        private static readonly string[] _listConsequensesControls = { _attrOwner, _attrControlOpinion, _attrBasisOfOpinion };
-        private static readonly string[] _listConsequensesActions = { _attrOwner, _attrPriority, _attrBaseline, _attrPercComplete, _attrStatus };
+        private static readonly string[] _listConsequensesControls = { _attrControlOwner, _attrControlOpinion, _attrBasisOfOpinion };
+        private static readonly string[] _listConsequensesActions = { _attrActionOwner, _attrPriority, _attrBaseline, _attrPercComplete, _attrStatus };
         private static readonly string[] _listEWI = { };
 
-        private static readonly double[] _widthCauses = { 100 };
-        private static readonly double[] _widthCausesControls = { 60, 20, 15, 5 };
-        private static readonly double[] _widthCausesActions = { 40, 10, 10, 10, 10, 10, 10 };
-        private static readonly double[] _widthConsequenses = { 100 };
-        private static readonly double[] _widthConsequensesControls = { 60, 20, 15, 5 };
-        private static readonly double[] _widthConsequensesActions = { 40, 10, 10, 10, 10, 10, 10 };
-        private static readonly double[] _widthEWI = { 100 };
+        private static readonly double[] _widthCauses = { 10, 90 };
+        private static readonly double[] _widthCausesControls = { 10, 30, 30, 20, 10 };
+        private static readonly double[] _widthCausesActions = { 10, 40, 10, 10, 10, 10, 10 };
+        private static readonly double[] _widthConsequenses = { 10, 90 };
+        private static readonly double[] _widthConsequensesControls = { 10, 30, 30, 20, 10 };
+        private static readonly double[] _widthConsequensesActions = { 10, 40, 10, 10, 10, 10, 10 };
+        private static readonly double[] _widthEWI = { 10, 90 };
 
 
         private static readonly string[] _riskLabels = {"1-Very Low", "2-Low", "3-Medium", "4-High", "5-Very High"};
@@ -214,6 +217,17 @@ namespace RiskBowTieNWR.Helpers
             return l;// notfound
         }
 
+        public static string LookupYesNoRiskLabel(string l)
+        {
+            switch (l.ToLower().Trim())
+            {
+                case "no":
+                    return "No";
+            }
+            return "Yes"; // everything else
+        }
+
+
         public static string GetReportingPriority(int order)
         {
             // makes sure top 5 items are reported as high priority (for filtering)    
@@ -241,6 +255,9 @@ namespace RiskBowTieNWR.Helpers
             log.Log($"Reading Portfolio Story");
             await Task.Delay(100);
             var portfolioStory = sc.LoadStory(portfolioId);
+            var attSubCat = portfolioStory.Attribute_FindByName("Risk Sub Category") ??
+                               portfolioStory.Attribute_Add("Risk Sub Category", Attribute.AttributeType.List);
+
 
             log.Log($"Reading Control Story");
             await Task.Delay(100);
@@ -317,10 +334,29 @@ namespace RiskBowTieNWR.Helpers
                             var attDirectorate = story.Attribute_FindByName(_attrDirectorate);
                             var riskCategoryName = riskItemSource.GetAttributeValueAsText(attDirectorate);
 
-                            var riskCategory = portfolioStory.Category_FindByName(riskCategoryName) ??
-                                               portfolioStory.Category_AddNew(riskCategoryName);
+                            string catName, subCatName;
+                            var split = riskCategoryName.Split('.');
+                            if (split.Count() == 1)
+                            {
+                                catName = split[0];
+                                subCatName = "";
+                            }
+                            else // maybe multiple sub cats
+                            {
+                                catName = split[0];
+                                subCatName = riskCategoryName.Substring(catName.Length+1);
+                            }
 
+                            var riskCategory = portfolioStory.Category_FindByName(catName) ??
+                                               portfolioStory.Category_AddNew(catName);
                             riskItem.Category = riskCategory;
+
+                            riskItem.SetAttributeValue(attSubCat, subCatName); // set the sub category attribute
+                            // TODO Set the real sub category when the SDK supports this.
+
+                            // copy and assigned risk tags
+                            foreach (var t in riskItemSource.Tags)
+                                riskItem.Tag_AddNew(t.Text);
 
 
                             var res = riskItem.Resource_FindByName(teamStory.Name) ?? riskItem.Resource_AddName(teamStory.Name);
@@ -488,8 +524,13 @@ namespace RiskBowTieNWR.Helpers
         }
 
 
-        private static void LoadPanelData(Item item, Story story, string category, string[] attributes, double[] widths = null)
+        private static void LoadPanelData(Item item, Story story, string category, string[] attributes, double[] widths)
         {
+            if (attributes.Length+2 != widths.Length)
+            {
+                throw new Exception("attributes and widths must match");
+            }
+
             var sortby = story.Attribute_FindByName("SortOrder");
             
             // add attributes so it won't blow up below
@@ -499,13 +540,12 @@ namespace RiskBowTieNWR.Helpers
                     story.Attribute_Add(attribute, Attribute.AttributeType.List);
             }
 
-            var table1 = new HTMLTable(attributes.Length + 1);
+            var table1 = new HTMLTable(attributes.Length + 2);
             int col = 0;
+            table1.SetValue(0, col++, "#");
             table1.SetValue(0, col++, "Name");
             foreach (var attribute in attributes)
             {
-                if (widths != null)
-                    table1.SetColWidth(col, widths[col]);
                 table1.SetValue(0, col++, attribute);
             }
 
@@ -514,10 +554,9 @@ namespace RiskBowTieNWR.Helpers
             {
                 if (item2.Category.Name == category)
                 {
-                    //Debug.WriteLine($"Category = '{category}'");
                     col = 0;
+                    table1.SetValue(row, col++, item2.GetAttributeValueAsDouble(sortby).ToString());
                     table1.SetValue(row, col++, item2.Name);
-                    //Debug.WriteLine($"Item = '{item2.Name}'");
                     foreach (var attribute in attributes)
                     {
                         //Debug.WriteLine($"Attrubute = '{attribute}'");
@@ -530,6 +569,12 @@ namespace RiskBowTieNWR.Helpers
                     }
                     row++;
                 }
+            }
+
+            // set the col width
+            for (int c=0;c<widths.Length; c++)
+            {
+                table1.SetColWidth(c, widths[c]);
             }
 
             var panel = item.Panel_FindByTitle(category);
@@ -617,7 +662,9 @@ namespace RiskBowTieNWR.Helpers
 
             var attControlRating = story.Attribute_FindByName(_attrControlRating);
             var attImapactedArea = story.Attribute_FindByName(_attrImpactedArea);
-            var attOwner = story.Attribute_FindByName(_attrOwner);
+            var attRiskOwner = story.Attribute_FindByName(_attrRiskOwner);
+            var attControlOwner = story.Attribute_FindByName(_attrControlOwner);
+            var attActionOwner = story.Attribute_FindByName(_attrActionOwner);
             var attBasisOfOpinion = story.Attribute_FindByName(_attrBasisOfOpinion);
             var attLinkedControls = story.Attribute_FindByName(_attrLinkedControls);
             var attLinkedControlsTypes = story.Attribute_FindByName(_attrLinkedControlsTypes);
@@ -673,7 +720,7 @@ namespace RiskBowTieNWR.Helpers
                 SetAttributeWithLogging(log, risk, attRiskLevel, level);
                 SetAttributeWithLogging(log, risk, attDirectorate, directorate);
 
-                SetAttributeWithLogging(log, risk, attOwner, XL1.Sheets[sheet].Cells(6, 4).Text);
+                SetAttributeWithLogging(log, risk, attRiskOwner, XL1.Sheets[sheet].Cells(6, 4).Text);
                 SetAttributeWithLogging(log, risk, attManager, XL1.Sheets[sheet].Cells(7, 4).Text);
                 SetAttributeWithLogging(log, risk, attImapactedArea, LookupRiskLabel(XL1.Sheets[sheet].Cells(8, 4).Text));
                 SetAttributeWithLogging(log, risk, attControlRating, XL1.Sheets[sheet].Cells(9, 4).Text);
@@ -693,27 +740,22 @@ namespace RiskBowTieNWR.Helpers
 
                 SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
                 SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
-                SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
-                SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
-
-                SetAttributeWithLogging(log, risk, attLikelihoodSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 37).Text));
-                SetAttributeWithLogging(log, risk, attImpactSafety, LookupRiskLabel(XL1.Sheets[sheet].Cells(20, 35).Text));
-                SetAttributeWithLogging(log, risk, attAppetiteSafety, XL1.Sheets[sheet].Cells(22, 35).Text);
+                SetAttributeWithLogging(log, risk, attAppetiteSafety, LookupYesNoRiskLabel(XL1.Sheets[sheet].Cells(22, 35).Text));
                 SetAttributeWithLogging(log, risk, attRationaleSafety, XL1.Sheets[sheet].Cells(20, 19).Text);
 
                 SetAttributeWithLogging(log, risk, attLikelihoodPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 37).Text));
                 SetAttributeWithLogging(log, risk, attImpactPerformance, LookupRiskLabel(XL1.Sheets[sheet].Cells(25, 35).Text));
-                SetAttributeWithLogging(log, risk, attAppetitePerformace, XL1.Sheets[sheet].Cells(27, 35).Text);
+                SetAttributeWithLogging(log, risk, attAppetitePerformace, LookupYesNoRiskLabel(XL1.Sheets[sheet].Cells(27, 35).Text));
                 SetAttributeWithLogging(log, risk, attRationalePerformance, XL1.Sheets[sheet].Cells(25, 19).Text);
 
                 SetAttributeWithLogging(log, risk, attLikelihoodValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 37).Text));
                 SetAttributeWithLogging(log, risk, attImpactValue, LookupRiskLabel(XL1.Sheets[sheet].Cells(30, 35).Text));
-                SetAttributeWithLogging(log, risk, attAppetiteValue, XL1.Sheets[sheet].Cells(32, 35).Text);
+                SetAttributeWithLogging(log, risk, attAppetiteValue, LookupYesNoRiskLabel(XL1.Sheets[sheet].Cells(32, 35).Text));
                 SetAttributeWithLogging(log, risk, attRationaleValue, XL1.Sheets[sheet].Cells(30, 19).Text);
 
                 SetAttributeWithLogging(log, risk, attLikelihoodPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 37).Text));
                 SetAttributeWithLogging(log, risk, attImpactPolitical, LookupRiskLabel(XL1.Sheets[sheet].Cells(35, 35).Text));
-                SetAttributeWithLogging(log, risk, attAppetitePolitical, XL1.Sheets[sheet].Cells(37, 35).Text);
+                SetAttributeWithLogging(log, risk, attAppetitePolitical, LookupYesNoRiskLabel(XL1.Sheets[sheet].Cells(37, 35).Text));
                 SetAttributeWithLogging(log, risk, attRationalePolitical, XL1.Sheets[sheet].Cells(35, 19).Text);
 
                 SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel(XL1.Sheets[sheet].Cells(2, 79).Text)); //TODO
@@ -768,7 +810,7 @@ namespace RiskBowTieNWR.Helpers
                             item.Name = name;
                             item.Description = desc;
                             item.Category = catCauseControl;
-                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
+                            SetAttributeWithLogging(log, item, attControlOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
                             SetAttributeWithLogging(log, item, attControlOpinion,
                                 LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
                             SetAttributeWithLogging(log, item, attBasisOfOpinion,
@@ -796,7 +838,7 @@ namespace RiskBowTieNWR.Helpers
                             item.Description = desc;
                             item.Category = catCauseAction;
 
-                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 21).Text.Trim());
+                            SetAttributeWithLogging(log, item, attActionOwner, XL1.Sheets[sheet].Cells(row, 21).Text.Trim());
                             SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 22).Text.Trim());
                             SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 23).Text.Trim());
                             SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 24).Text.Trim());
@@ -846,7 +888,7 @@ namespace RiskBowTieNWR.Helpers
                             item.Name = name;
                             item.Description = desc;
                             item.Category = catConsequenceControl;
-                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
+                            SetAttributeWithLogging(log, item, attControlOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
                             SetAttributeWithLogging(log, item, attControlOpinion,
                                 LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
                             SetAttributeWithLogging(log, item, attBasisOfOpinion,
@@ -874,7 +916,7 @@ namespace RiskBowTieNWR.Helpers
                             item.Description = desc;
                             item.Category = catConsequenceAction;
 
-                            SetAttributeWithLogging(log, item, attOwner, XL1.Sheets[sheet].Cells(row, 53).Text.Trim());
+                            SetAttributeWithLogging(log, item, attActionOwner, XL1.Sheets[sheet].Cells(row, 53).Text.Trim());
                             SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 54).Text.Trim());
                             SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 55).Text.Trim());
                             SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 56).Text.Trim());
@@ -1095,7 +1137,6 @@ namespace RiskBowTieNWR.Helpers
 
             CopyValues(1, XLS, 2, 4, XLD, 2, 4); // Classification 
             CopyValues(1, XLS, 3, 16, XLD, 3, 4); // Risk Level 
-            //CopyValues(1, XLS, 4, 4, XLD, 4, 4); // Category 
             CopyValues(1, XLS, 3, 4, XLD, 5, 4); // Risk Title
             CopyValues(1, XLS, 6, 4, XLD, 6, 4); // Risk Owner 
             CopyValues(1, XLS, 7, 4, XLD, 7, 4); // Risk Manager
@@ -1106,7 +1147,6 @@ namespace RiskBowTieNWR.Helpers
                     string sca = XLS.Sheets[1].Cells[r, 1].Text;
                     sca = sca.Replace("Performance", "Business Performance").Replace("Finance & Investment", "Financial Control").Replace("Asset Management", "Asset Stewardship").Replace("Satisfaction / Reputation", "Customer & Stakeholder Relationships").Replace("Additional Measures", "");
                     XLD.Sheets[1].Cells[8, 4] = sca;
-                    //CopyValues(1, XLS, r, 1, XLD, 8, 4); // Scorecard Area 
                 }
             }
 
@@ -1134,7 +1174,6 @@ namespace RiskBowTieNWR.Helpers
             // overall
             CopyValues(1, XLS, 40, 19, XLD);
 
-
             for (int sheet =1; sheet<=3; sheet++)
             {
                 // EWI
@@ -1150,9 +1189,11 @@ namespace RiskBowTieNWR.Helpers
                 for (int row = 23; row <= 41; row += 2)
                 {
                     // causes
+                    CopyValues(sheet, XLS, row, 2, XLD);
                     CopyValues(sheet, XLS, row, 3, XLD);
                     CopyValues(sheet, XLS, row, 16, XLD);
                     //conseqeunces
+                    CopyValues(sheet, XLS, row, 40, XLD);
                     CopyValues(sheet, XLS, row, 41, XLD);
                     CopyValues(sheet, XLS, row, 56, XLD);
                 }
@@ -1160,12 +1201,14 @@ namespace RiskBowTieNWR.Helpers
                 for (int row = 48; row <= 59; row += 1)
                 {
                     // cause controls
+                    CopyValues(sheet, XLS, row, 2, XLD);
                     CopyValues(sheet, XLS, row, 3, XLD);
                     CopyValues(sheet, XLS, row, 9, XLD);
                     CopyValues(sheet, XLS, row, 10, XLD);
                     CopyValues(sheet, XLS, row, 11, XLD);
 
                     // cause action
+                    CopyValues(sheet, XLS, row, 13, XLD);
                     CopyValues(sheet, XLS, row, 14, XLD);
                     CopyValues(sheet, XLS, row, 21, XLD);
                     CopyValues(sheet, XLS, row, 22, XLD);
@@ -1175,12 +1218,14 @@ namespace RiskBowTieNWR.Helpers
                     CopyValues(sheet, XLS, row, 26, XLD);
 
                     // consequence controls
+                    CopyValues(sheet, XLS, row, 2 + 30, XLD);
                     CopyValues(sheet, XLS, row, 3 + 30, XLD);
                     CopyValues(sheet, XLS, row, 9 + 30, XLD);
                     CopyValues(sheet, XLS, row, 10 + 30, XLD);
                     CopyValues(sheet, XLS, row, 11 + 30, XLD);
 
                     // conseuence actions
+                    CopyValues(sheet, XLS, row, 13 + 31, XLD);
                     CopyValues(sheet, XLS, row, 14 + 31, XLD);
                     CopyValues(sheet, XLS, row, 21 + 31, XLD);
                     CopyValues(sheet, XLS, row, 22 + 31, XLD);

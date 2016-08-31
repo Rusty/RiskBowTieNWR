@@ -7,7 +7,7 @@
         xmlns:viewModels="clr-namespace:RiskBowTieNWR.ViewModels"
         xmlns:converters="clr-namespace:RiskBowTieNWR.Converters"
         mc:Ignorable="d"
-        Title="SharpCloud Risk Bow Tie for NetworkRail v1.0.2" Height="650" Width="925" Background="#000000" FontSize="18">
+        Title="SharpCloud Risk Bow Tie for NetworkRail v1.0.3" Height="650" Width="925" Background="#000000" FontSize="18">
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>
@@ -160,8 +160,6 @@
             <TabItem Header="Rollup">
                 <Grid>
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Orientation="Horizontal">
-                        <CheckBox x:Name="chkControl" IsChecked="True" Content="Build Control Library" Foreground="White" Margin="10"/>
-                        <CheckBox x:Name="chkPortfolio" IsChecked="True" Content="Build Control Library" Foreground="White" Margin="10"/>
                         <Button Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Now " Background="#00AFFC" Foreground="White" Click="ProcessPortfolio_Click" />
                     </StackPanel>
                     <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,50,10,10" IsReadOnly="True" Foreground="#00AFFC" Text="{Binding ProgressLogText2}" FontSize="10"/>
