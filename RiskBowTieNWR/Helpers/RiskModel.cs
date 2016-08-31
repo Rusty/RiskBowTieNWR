@@ -764,6 +764,14 @@ namespace RiskBowTieNWR.Helpers
 
                 SetAttributeWithLogging(log, risk, attReportingPriority, GetReportingPriority(0));
 
+                string tagText = XL1.Sheets["Version Control"].Cells[21, 47].Text;
+                var tags = tagText.Split(',');
+                foreach (var t in tags)
+                {
+                    risk.Tag_AddNew(t.Trim());
+                }
+
+
                 Item item;
                 string extId;
                 int order;
@@ -1234,6 +1242,44 @@ namespace RiskBowTieNWR.Helpers
                     CopyValues(sheet, XLS, row, 25 + 31, XLD);
                     CopyValues(sheet, XLS, row, 26 + 31, XLD);
                 }
+            }
+
+            // copy document control fields
+            // find start row
+            var vc = "Version Control";
+            int rowDCF = -1;
+            for (int r = 1; r < 100; r++)
+            {
+                string s = XLS.Sheets[vc].Cells[r, 1].Text;
+                Debug.WriteLine(s);
+                if (XLS.Sheets[vc].Cells[r, 1].Text.Trim() == "Document Version Control")
+                {
+                    rowDCF = r;
+                    break;
+                }
+            }
+            int rowD = 39;
+            try
+            {
+                if (rowDCF != -1)
+                {
+                    int rowS = rowDCF + 3;
+                    while (!string.IsNullOrEmpty(XLS.Sheets[vc].Cells[rowS, 1].Text))
+                    {
+                        for (int c = 1; c < 7; c++)
+                            XLD.Sheets[vc].Cells[rowD, c] = XLS.Sheets[vc].Cells[rowS, c];
+                        rowD++;
+                        rowS++;
+                    }
+                }
+                XLD.Sheets[vc].Cells[rowD, 1] = DateTime.Now.ToShortDateString();
+                XLD.Sheets[vc].Cells[rowD, 2] = "2.0";
+                XLD.Sheets[vc].Cells[rowD, 3] = "Automatic transfer of ERR to version 2.0 of the template";
+                XLD.Sheets[vc].Cells[rowD, 4] = "All";
+            }
+            catch (Exception e)
+            {
+                log.LogError($"Bad data in spreadsheet - cannot copy accoss doc control");
             }
 
             GC.Collect();
