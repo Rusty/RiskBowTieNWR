@@ -277,6 +277,8 @@ namespace RiskBowTieNWR.Helpers
                    controlsStory.Attribute_Add(_attrBasisOfOpinion, Attribute.AttributeType.List);
             var attKeyScorecardAreaControlStory = controlsStory.Attribute_FindByName(_attrImpactedArea) ??
                                controlsStory.Attribute_Add(_attrImpactedArea, Attribute.AttributeType.List);
+            var attDirectorateControlStory = controlsStory.Attribute_FindByName(_attrDirectorate) ??
+                               controlsStory.Attribute_Add(_attrDirectorate, Attribute.AttributeType.List);
 
 
             /* Don't remove
@@ -293,6 +295,7 @@ namespace RiskBowTieNWR.Helpers
                 itm.RemoveAttributeValue(attRiskLevelControlStory);
                 itm.RemoveAttributeValue(attBasisOfOpinionControlStory);
                 itm.RemoveAttributeValue(attKeyScorecardAreaControlStory);
+                itm.RemoveAttributeValue(attDirectorateControlStory);
 
                 itm.SetAttributeValue(attRiskCountControlStory, 0);
 
@@ -437,6 +440,8 @@ namespace RiskBowTieNWR.Helpers
                                 AddAttributeButCheckForDiffernce(itemControlSource, attBasisOfOpinionRiskStory, itemControlDestination, attBasisOfOpinionControlStory);
                                 // add risk group (category)
                                 AddAttributeButCheckForDiffernce(riskItemSource, attScorecardAreaRiskStory, itemControlDestination, attKeyScorecardAreaControlStory);
+                                // add risk directorate
+                                AddAttributeButCheckForDiffernce(riskItemSource, attDirectorate, itemControlDestination, attDirectorateControlStory);
 
                             }
                             story.Save();// save resourc links
