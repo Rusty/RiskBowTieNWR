@@ -228,6 +228,8 @@ namespace RiskBowTieNWR.Views
 
         private void imgIcon_Loaded(object sender, RoutedEventArgs e)
         {
+            return;
+
             var t = sender as System.Windows.Controls.Image;
             var content = t.DataContext as SC.API.ComInterop.Models.Team;
             String stringPath = _client.BaseUri + "/image/" + content.Id + "?t=teamid";

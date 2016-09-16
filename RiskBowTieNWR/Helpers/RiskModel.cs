@@ -279,6 +279,8 @@ namespace RiskBowTieNWR.Helpers
                                controlsStory.Attribute_Add(_attrImpactedArea, Attribute.AttributeType.List);
             var attDirectorateControlStory = controlsStory.Attribute_FindByName(_attrDirectorate) ??
                                controlsStory.Attribute_Add(_attrDirectorate, Attribute.AttributeType.List);
+            var attControlOwnerControlStory = controlsStory.Attribute_FindByName(_attrControlOwner) ??
+                               controlsStory.Attribute_Add(_attrControlOwner, Attribute.AttributeType.List);
 
 
             /* Don't remove
@@ -296,6 +298,7 @@ namespace RiskBowTieNWR.Helpers
                 itm.RemoveAttributeValue(attBasisOfOpinionControlStory);
                 itm.RemoveAttributeValue(attKeyScorecardAreaControlStory);
                 itm.RemoveAttributeValue(attDirectorateControlStory);
+                itm.RemoveAttributeValue(attControlOwnerControlStory);
 
                 itm.SetAttributeValue(attRiskCountControlStory, 0);
 
@@ -382,24 +385,25 @@ namespace RiskBowTieNWR.Helpers
 
                             // do the controls
                             var attManagedControlsRiskStory = story.Attribute_FindByName(_attrControlOpinion) ??
-                                                     story.Attribute_Add(_attrControlOpinion,
-                                                         Attribute.AttributeType.List);
+                                                       story.Attribute_Add(_attrControlOpinion, Attribute.AttributeType.List);
+
                             var attRiskLevelControlsRiskStory = story.Attribute_FindByName(_attrRiskLevel) ??
                                                        story.Attribute_Add(_attrRiskLevel, Attribute.AttributeType.List);
+
                             var attOverallControlRatingControlsRiskStory = story.Attribute_FindByName(_attrControlRating) ??
-                                                                  story.Attribute_Add(_attrControlRating,
-                                                                      Attribute.AttributeType.List);
+                                                       story.Attribute_Add(_attrControlRating, Attribute.AttributeType.List);
+
                             var attBasisOfOpinionRiskStory = story.Attribute_FindByName(_attrBasisOfOpinion) ??
-                                   controlsStory.Attribute_Add(_attrBasisOfOpinion, Attribute.AttributeType.List);
+                                                       story.Attribute_Add(_attrBasisOfOpinion, Attribute.AttributeType.List);
 
                             var attScorecardAreaRiskStory = story.Attribute_FindByName(_attrImpactedArea) ??
-                                   controlsStory.Attribute_Add(_attrImpactedArea, Attribute.AttributeType.List);
+                                                       story.Attribute_Add(_attrImpactedArea, Attribute.AttributeType.List);
+
+                            var attControlOwnerRiskStory = story.Attribute_FindByName(_attrControlOwner) ??
+                                                       story.Attribute_Add(_attrControlOwner, Attribute.AttributeType.List);
 
 
-                            foreach (
-                                var itemControlSource in
-                                    story.Items.Where(
-                                        i =>
+                            foreach (var itemControlSource in story.Items.Where( i =>
                                             (i.Category.Name == _causeControls ||
                                              i.Category.Name == _consequenceControls)))
                             {
@@ -442,6 +446,8 @@ namespace RiskBowTieNWR.Helpers
                                 AddAttributeButCheckForDiffernce(riskItemSource, attScorecardAreaRiskStory, itemControlDestination, attKeyScorecardAreaControlStory);
                                 // add risk directorate
                                 AddAttributeButCheckForDiffernce(riskItemSource, attDirectorate, itemControlDestination, attDirectorateControlStory);
+                                // add risk directorate
+                                AddAttributeButCheckForDiffernce(itemControlSource, attControlOwnerRiskStory, itemControlDestination, attControlOwnerControlStory);
 
                             }
                             story.Save();// save resourc links

@@ -103,11 +103,18 @@ namespace RiskBowTieNWR
 
         private void SelectTemplate_Click(object sender, RoutedEventArgs e)
         {
-            var sel = new SelectStory(GetApi(), false);
-            if (sel.ShowDialog() == true)
+            try
             {
-                _viewModel.SelectedTemplateStory = new Models.StoryLite2(sel.SelectedStoryLites[0]);
-                CheckTemplate();
+                var sel = new SelectStory(GetApi(), false);
+                if (sel.ShowDialog() == true)
+                {
+                    _viewModel.SelectedTemplateStory = new Models.StoryLite2(sel.SelectedStoryLites[0]);
+                    CheckTemplate();
+                }
+            }
+            catch (Exception E)
+            {
+                
             }
         }
 
