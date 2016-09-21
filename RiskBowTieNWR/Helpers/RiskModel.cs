@@ -47,9 +47,9 @@ namespace RiskBowTieNWR.Helpers
 
         private const string _attrPercComplete = "Action % Complete";
         private const string _attrOrder = "SortOrder";
-        private const string _attrPrior = "Prior";
+//        private const string _attrPrior = "Prior";
         private const string _attrCurrent = "Current";
-        private static readonly string[] _numberFields = { _attrPercComplete, _attrOrder, _attrPrior, _attrCurrent };
+        private static readonly string[] _numberFields = { _attrPercComplete, _attrOrder, _attrCurrent };
 
         private const string _attrControlOpinion = "Control Opinion";
         private const string _attrBasisOfOpinion = "Basis of Opinion";
@@ -67,9 +67,10 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrDirectorate = "Directorate";
         private const string _attrGrossRating = "Gross Rating";
         private const string _attrTargetRating = "Target Rating";
+        private const string _attrWithinTolerance = "Within Tolerance";
         private static readonly string[] _listFields = { _attrControlOpinion, _attrBasisOfOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
             _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority, _attrDirectorate,
-            _attrGrossRating,  _attrTargetRating  };
+            _attrGrossRating,  _attrTargetRating, _attrWithinTolerance };
 
         private const string _attrLikelihood = "Likelihood (Overall)";
         private const string _attrImpact = "Impact (Overall)";
@@ -683,8 +684,9 @@ namespace RiskBowTieNWR.Helpers
             var attRevision = story.Attribute_FindByName(_attrRevision);
             var attPercComplete = story.Attribute_FindByName(_attrPercComplete);
             var attSortOrder = story.Attribute_FindByName(_attrOrder);
-            var attPrior = story.Attribute_FindByName(_attrPrior);
+            //var attPrior = story.Attribute_FindByName(_attrPrior);
             var attCurrent = story.Attribute_FindByName(_attrCurrent);
+            var attWithinTolerance = story.Attribute_FindByName(_attrWithinTolerance);
             var attControlOpinion = story.Attribute_FindByName(_attrControlOpinion);
             var attPriority = story.Attribute_FindByName(_attrPriority);
             var attStatus = story.Attribute_FindByName(_attrStatus);
@@ -967,8 +969,9 @@ namespace RiskBowTieNWR.Helpers
                                 XL1.Sheets[sheet].Cells(row, 19).Text);
                             SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 21).Text);
 
-                            SetAttributeWithLogging(log, item, attPrior, XL1.Sheets[sheet].Cells(row, 35).Text);
-                            SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 37).Text);
+                            //SetAttributeWithLogging(log, item, attPrior, XL1.Sheets[sheet].Cells(row, 35).Text);
+                            SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 35).Text);
+                            SetAttributeWithLogging(log, item, attWithinTolerance, XL1.Sheets[sheet].Cells(row, 37).Text);
 
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
