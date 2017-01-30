@@ -231,22 +231,28 @@ namespace RiskBowTieNWR
 
             System.IO.Directory.CreateDirectory(_viewModel.SelectedDataFolder + "/migrated/");
 
-
-            // find list of stories for selected team
-            foreach (var f in _viewModel.FileList.Where(fi => fi.IsSelected == true))
+            try
             {
-                if (f.FileName[0] == '~')
+                // find list of stories for selected team
+                foreach (var f in _viewModel.FileList.Where(fi => fi.IsSelected == true))
                 {
-                    logger.Log($"Skipping {f.FileName}");
+                    if (f.FileName[0] == '~')
+                    {
+                        logger.Log($"Skipping {f.FileName}");
+                        await Task.Delay(100);
+                        continue;
+                    }
+
+                    logger.Log($"Processing {f.FileName}");
                     await Task.Delay(100);
-                    continue;
+
+                    RiskModel.MigrateSpreadsheet(f.FullPath, _viewModel.SelectedDataFolder + "/Template.xltm",
+                        _viewModel.SelectedDataFolder + "/migrated/" + f.FileName, logger);
                 }
-
-                logger.Log($"Processing {f.FileName}");
-                await Task.Delay(100);
-
-                RiskModel.MigrateSpreadsheet(f.FullPath, _viewModel.SelectedDataFolder + "/Template.xltm",
-                    _viewModel.SelectedDataFolder + "/migrated/" + f.FileName, logger);
+            }
+            catch (Exception eBad)
+            {
+                logger.LogError(eBad.Message);
             }
 
             await Task.Delay(1000);
@@ -329,7 +335,7 @@ namespace RiskBowTieNWR
                     try
                     {
                         var story = client.LoadStory(storyId);
-                        RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger);
+                        RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger, chkDelete.IsChecked==true);
                         story.Save();
                     }
                     catch (Exception ex)

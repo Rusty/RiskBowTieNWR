@@ -35,6 +35,15 @@ namespace RiskBowTieNWR.Helpers
             SetMessage(message);
         }
 
+        public void LogError(Exception ex)
+        {
+            SetMessage($"ERROR: {ex.Message}");
+            SetMessage($"{ex.Source}");
+            SetMessage($"{ex.StackTrace}");
+            SetMessage($"{ex.TargetSite}");
+            ErrorCount++;
+        }
+
         public void LogError(string message)
         {
             SetMessage($"ERROR: {message}");

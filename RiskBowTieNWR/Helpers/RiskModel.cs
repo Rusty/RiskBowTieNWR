@@ -624,7 +624,7 @@ namespace RiskBowTieNWR.Helpers
         }
 
 
-        public static void CreateStoryFromXLTemplate(Story story, string XLFilename, Logger log)
+        public static void CreateStoryFromXLTemplate(Story story, string XLFilename, Logger log, bool deleteItems)
         {
             EnsureStoryHasRightStructure(story, log);
 
@@ -792,7 +792,7 @@ namespace RiskBowTieNWR.Helpers
                 string name;
                 string desc;
                 string text;
-                // data can be in teh same place on 3 sheets (continuation sheets)
+                // data can be in the same place on 3 sheets (continuation sheets)
                 for (sheet = 1; sheet <= 3; sheet++)
                 {
                     // cause
@@ -815,9 +815,15 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
                         }
+                        else if (deleteItems)
+                        {
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
+                            extId = _causeId + $"{order:D2}";
+                            DeleteItemWithLogging(log, story, extId);
+                        }
                     }
                     // cause-control
-                    for (int row = 48; row < 59; row++)
+                    for (int row = 48; row <= 59; row++)
                     {
                         text = XL1.Sheets[sheet].Cells(row, 3).Text;
                         if (!string.IsNullOrWhiteSpace(text))
@@ -841,6 +847,12 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
                             item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
+                        }
+                        else if (deleteItems)
+                        {
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
+                            extId = _causeControlsId + $"{order:D2}";
+                            DeleteItemWithLogging(log, story, extId);
                         }
                     }
                     // cause-action
@@ -870,6 +882,12 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
                         }
+                        else if (deleteItems)
+                        {
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 13).Text.Trim());
+                            extId = _causeControlActionsId + $"{order:D2}";
+                            DeleteItemWithLogging(log, story, extId);
+                        }
                     }
 
                     // consequences
@@ -891,7 +909,12 @@ namespace RiskBowTieNWR.Helpers
 
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
+                        }
+                        else if (deleteItems)
+                        {
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 40).Text.Trim());
+                            extId = _consequenceId + $"{order:D2}";
+                            DeleteItemWithLogging(log, story, extId);
                         }
                     }
                     // consequence-control
@@ -920,6 +943,12 @@ namespace RiskBowTieNWR.Helpers
 
                             item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
                         }
+                        else if (deleteItems)
+                        {
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
+                            extId = _consequenceControlsId + $"{order:D2}";
+                            DeleteItemWithLogging(log, story, extId);
+                        }
                     }
                     // consequence-action
                     for (int row = 48; row < 59; row++)
@@ -947,6 +976,12 @@ namespace RiskBowTieNWR.Helpers
 
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+                        }
+                        else if (deleteItems)
+                        {
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
+                            extId = _consequenceControlActionsId + $"{order:D2}";
+                            DeleteItemWithLogging(log, story, extId);
                         }
                     }
 
@@ -977,7 +1012,12 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
                             var link = XL1.Sheets[sheet].Cells(row, 19).Text;
-
+                        }
+                        else if (deleteItems)
+                        {
+                            order = counterEWI++;
+                            extId = _ewiId + $"{order:D2}";
+                            DeleteItemWithLogging(log, story, extId);
                         }
                     }
                 }
@@ -991,6 +1031,7 @@ namespace RiskBowTieNWR.Helpers
                     item = story.Item_FindByExternalId(extId);
                     if (item != null)
                     {
+                        //log.Log($"processing rels for {item.Name}");
                         var rels = item.GetAttributeValueAsText(attLinkedControls);
                         foreach (var r in rels.Split(','))
                         {
@@ -1001,6 +1042,10 @@ namespace RiskBowTieNWR.Helpers
                             {
                                 item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
                             }
+                            else
+                            {
+                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
+                            }
                         }
                     }
 
@@ -1009,6 +1054,7 @@ namespace RiskBowTieNWR.Helpers
                     item = story.Item_FindByExternalId(extId);
                     if (item != null)
                     {
+                        //log.Log($"processing rels for {item.Name}");
                         var rels = item.GetAttributeValueAsText(attLinkedControls);
                         foreach (var r in rels.Split(','))
                         {
@@ -1019,6 +1065,10 @@ namespace RiskBowTieNWR.Helpers
                             {
                                 item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
                             }
+                            else
+                            {
+                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
+                            }
                         }
                     }
 
@@ -1027,6 +1077,7 @@ namespace RiskBowTieNWR.Helpers
                     item = story.Item_FindByExternalId(extId);
                     if (item != null)
                     {
+                        //log.Log($"processing rels for {item.Name}");
                         var rels = item.GetAttributeValueAsText(attLinkedControls);
                         foreach (var r in rels.Split(','))
                         {
@@ -1036,6 +1087,10 @@ namespace RiskBowTieNWR.Helpers
                             if (itm != null)
                             {
                                 item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
+                            }
+                            else
+                            {
+                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
                             }
                         }
                     }
@@ -1059,9 +1114,12 @@ namespace RiskBowTieNWR.Helpers
                             {
                                 item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
                             }
+                            else
+                            {
+                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
+                            }
                         }
                     }
-
                 }
 
                 GC.Collect();
@@ -1078,7 +1136,7 @@ namespace RiskBowTieNWR.Helpers
             }
             catch ( Exception ex)
             {
-                log.LogError(ex.Message);
+                log.LogError(ex);
             }
             
         }
@@ -1097,8 +1155,18 @@ namespace RiskBowTieNWR.Helpers
                 desc = text.Substring(0, Math.Min(1000, text.Length)).Trim();
             }
         }
-    
-        
+
+        private static void DeleteItemWithLogging(Logger log, Story story, string itemExtId)
+        {
+            var item = story.Item_FindByExternalId(itemExtId);
+            if (item != null)
+            {
+                log.Log($"Deleting item '{itemExtId}'");
+                story.Item_DeleteById(item.Id);
+            }
+        }
+
+
         private static void SetAttributeWithLogging(Logger log, Item item, Attribute att, int value)
         {
             SetAttributeWithLogging(log, item, att, $"{value:D2}");
@@ -1114,7 +1182,7 @@ namespace RiskBowTieNWR.Helpers
             }
             catch (Exception e)
             {
-                log.Log($"Error: {e.Message}");
+                log.Log($"Error: {e.Message}, value='{value}', item='{item.Name}', attribute='{att.Name}'");
             }
             
         }
@@ -1295,30 +1363,36 @@ namespace RiskBowTieNWR.Helpers
             {
                 log.LogError($"Bad data in spreadsheet - cannot copy accoss doc control");
             }
+            try
+            {
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+                wbSource.Close(false);
+                Marshal.ReleaseComObject(wbSource);
 
-            GC.Collect();
-            GC.WaitForFullGCComplete();
-            wbSource.Close(false);
-            Marshal.ReleaseComObject(wbSource);
+                wbTemplate.SaveAs(newFile.Replace("xlsx", "xlsm"),
+                    Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled);
 
-            wbTemplate.SaveAs(newFile.Replace("xlsx", "xlsm"), Microsoft.Office.Interop.Excel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled);
+                wbTemplate.Close(true);
+                Marshal.ReleaseComObject(wbTemplate);
 
-            wbTemplate.Close(true);
-            Marshal.ReleaseComObject(wbTemplate);
+                KillProcessByMainWindowHwnd(XLS.Application.Hwnd);
+                KillProcessByMainWindowHwnd(XLD.Application.Hwnd);
 
-            KillProcessByMainWindowHwnd(XLS.Application.Hwnd);
-            KillProcessByMainWindowHwnd(XLD.Application.Hwnd);
+                //XLS.Quit();
+                //Marshal.ReleaseComObject(XLS);
+                //XLD.Quit();
+                //Marshal.ReleaseComObject(XLD);
 
-            //XLS.Quit();
-            //Marshal.ReleaseComObject(XLS);
-            //XLD.Quit();
-            //Marshal.ReleaseComObject(XLD);
-
-            GC.Collect();
-            GC.WaitForFullGCComplete();
-            GC.Collect();
-            GC.WaitForFullGCComplete();
-
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+            }
+            catch (Exception eBad)
+            {
+                log.LogError(eBad.Message);
+            }
         }
 
         private static async void CopyValues(int sheet, Application wbS, int row, int col, Application wbD)

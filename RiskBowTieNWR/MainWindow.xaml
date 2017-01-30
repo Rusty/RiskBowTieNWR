@@ -7,7 +7,7 @@
         xmlns:viewModels="clr-namespace:RiskBowTieNWR.ViewModels"
         xmlns:converters="clr-namespace:RiskBowTieNWR.Converters"
         mc:Ignorable="d"
-        Title="SharpCloud Risk Bow Tie for NetworkRail v1.0.8" Height="650" Width="925" Background="#000000" FontSize="18">
+        Title="SharpCloud Risk Bow Tie for NetworkRail v1.0.9" Height="650" Width="925" Background="#000000" FontSize="18">
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>
@@ -151,8 +151,11 @@
                         <Button Content="  Migrate  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectMigrate_Click" />
                     </StackPanel>
 
-                    <Button Grid.Column="1" Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Selected Files " Background="#00AFFC" Foreground="White" Click="ProcessFiles_Click" />
-                    <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,50,10,10" IsReadOnly="True" x:Name="loggerTextBox" Foreground="#00AFFC" Text="{Binding ProgressLogText}" FontSize="10"/>
+                    <StackPanel Grid.Column="1" >
+                        <Button Height="30"  Margin="10" Content=" Process Selected Files " Background="#00AFFC" Foreground="White" Click="ProcessFiles_Click" />
+                        <CheckBox Height="30" Margin="10" x:Name="chkDelete" Content=" Delete items " Background="#00AFFC" Foreground="White" />
+                    </StackPanel>
+                    <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,90,10,10" IsReadOnly="True" x:Name="loggerTextBox" Foreground="#00AFFC" Text="{Binding ProgressLogText}" FontSize="10"/>
                     <Button Grid.Column="1" Height="30" VerticalAlignment="Bottom" Margin="10" HorizontalAlignment="Right" Content=" View Logs " Background="#00AFFC" Foreground="White" Click="ViewLog_Click" />
 
                 </Grid>
