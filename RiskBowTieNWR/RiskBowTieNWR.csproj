@@ -55,11 +55,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>0C4E8F70A29AE75C0584449E4BBDD3DADBF11038</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>A56D439541B8077E854630B3840030B23D8D1CD6</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>
-    </ManifestKeyFile>
+    <ManifestKeyFile>sharpcloudcodesigning.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -76,15 +75,15 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="SC.Api, Version=1.0.23.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.23\lib\SC.Api.dll</HintPath>
+      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.25\lib\SC.Api.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="SC.API.ComInterop, Version=1.0.23.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.23\lib\SC.API.ComInterop.dll</HintPath>
+      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.25\lib\SC.API.ComInterop.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="SC.Framework, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.23\lib\SC.Framework.dll</HintPath>
+      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.25\lib\SC.Framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -181,6 +180,7 @@
     </None>
     <AppDesigner Include="Properties\" />
     <None Include="RiskBowTieNWR_TemporaryKey.pfx" />
+    <None Include="sharpcloudcodesigning.pfx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
