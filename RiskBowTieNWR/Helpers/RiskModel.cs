@@ -856,7 +856,7 @@ namespace RiskBowTieNWR.Helpers
                         }
                     }
                     // cause-action
-                    for (int row = 48; row < 59; row++)
+                    for (int row = 48; row <= 59; row++)
                     {
                         text = XL1.Sheets[sheet].Cells(row, 14).Text;
                         if (!string.IsNullOrWhiteSpace(text))
@@ -918,7 +918,7 @@ namespace RiskBowTieNWR.Helpers
                         }
                     }
                     // consequence-control
-                    for (int row = 48; row < 59; row++)
+                    for (int row = 48; row <= 59; row++)
                     {
                         text = XL1.Sheets[sheet].Cells(row, 33).Text;
                         if (!string.IsNullOrWhiteSpace(text))
@@ -951,7 +951,7 @@ namespace RiskBowTieNWR.Helpers
                         }
                     }
                     // consequence-action
-                    for (int row = 48; row < 59; row++)
+                    for (int row = 48; row <= 59; row++)
                     {
                         text = XL1.Sheets[sheet].Cells(row, 45).Text;
                         if (!string.IsNullOrWhiteSpace(text))
@@ -984,7 +984,8 @@ namespace RiskBowTieNWR.Helpers
                             DeleteItemWithLogging(log, story, extId);
                         }
                     }
-
+                    
+                    // Early Warning indicators
                     for (int row = 9; row <= 17; row += 2)
                     {
                         text = XL1.Sheets[sheet].Cells(row, 22).Text;
@@ -1104,19 +1105,22 @@ namespace RiskBowTieNWR.Helpers
                         var rels = item.GetAttributeValueAsText(attLinkedControls);
                         foreach (var r in rels.Split(','))
                         {
-                            var i = GetInt(r);
-                            var ex = _causeControlsId + $"{i:D2}";
-                            if (relType == "Conseq.")
-                                ex = _consequenceControlsId + $"{i:D2}";
+                            if (!string.IsNullOrEmpty(r))
+                            {
+                                var i = GetInt(r);
+                                var ex = _causeId + $"{i:D2}";
+                                if (relType == "Conseq.")
+                                    ex = _consequenceId + $"{i:D2}";
 
-                            var itm = story.Item_FindByExternalId(ex);
-                            if (itm != null)
-                            {
-                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
-                            }
-                            else
-                            {
-                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
+                                var itm = story.Item_FindByExternalId(ex);
+                                if (itm != null)
+                                {
+                                    item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                                }
+                                else
+                                {
+                                    log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
+                                }
                             }
                         }
                     }
@@ -1182,7 +1186,20 @@ namespace RiskBowTieNWR.Helpers
             }
             catch (Exception e)
             {
-                log.Log($"Error: {e.Message}, value='{value}', item='{item.Name}', attribute='{att.Name}'");
+                var b = true;
+                if (value.Contains("%")) 
+                {
+                    value = value.Replace("%", "").Trim(); // important - must not get stuck in a loop
+                    double dbl;
+                    if (double.TryParse(value, out dbl))
+                    {
+                        b = false; // prevent the logging from the first instance
+                        SetAttributeWithLogging(log, item, att, $"{dbl/100}");
+                    }
+
+                }
+                if (b)
+                    log.Log($"Error: {e.Message}, value='{value}', item='{item.Name}', attribute='{att.Name}'");
             }
             
         }
