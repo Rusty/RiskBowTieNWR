@@ -47,9 +47,10 @@ namespace RiskBowTieNWR.Helpers
 
         private const string _attrPercComplete = "Action % Complete";
         private const string _attrOrder = "SortOrder";
-//        private const string _attrPrior = "Prior";
+        //        private const string _attrPrior = "Prior";
         private const string _attrCurrent = "Current";
-        private static readonly string[] _numberFields = { _attrPercComplete, _attrOrder, _attrCurrent };
+        private const string _attrTolerance = "Tolerance";
+        private static readonly string[] _numberFields = { _attrPercComplete, _attrOrder, _attrCurrent, _attrTolerance };
 
         private const string _attrControlOpinion = "Control Opinion";
         private const string _attrBasisOfOpinion = "Basis of Opinion";
@@ -686,6 +687,7 @@ namespace RiskBowTieNWR.Helpers
             var attSortOrder = story.Attribute_FindByName(_attrOrder);
             //var attPrior = story.Attribute_FindByName(_attrPrior);
             var attCurrent = story.Attribute_FindByName(_attrCurrent);
+            var attTolerance = story.Attribute_FindByName(_attrTolerance);
             var attWithinTolerance = story.Attribute_FindByName(_attrWithinTolerance);
             var attControlOpinion = story.Attribute_FindByName(_attrControlOpinion);
             var attPriority = story.Attribute_FindByName(_attrPriority);
@@ -712,7 +714,7 @@ namespace RiskBowTieNWR.Helpers
                 var version = XL1.Sheets["Version Control"].Cells[1, 26].Text;
                 if (version != "SCApproved")
                 {
-                    log.Log($"Spreadhseet is not in the approved version, missing 'SCApproved' at Z1 in 'Version Control' ");
+                    log.Log($"Spreadsheet is not in the approved version, missing 'SCApproved' at Z1 in 'Version Control' ");
                     KillProcessByMainWindowHwnd(XL1.Application.Hwnd);
                     return;
                 }
@@ -809,11 +811,9 @@ namespace RiskBowTieNWR.Helpers
                             item.Name = name;
                             item.Description = desc;
                             item.Category = catCause;
-                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 16).Text);
-
-                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attLinkedControls,   XL1.Sheets[sheet].Cells(row, 16).Text);
+                            SetAttributeWithLogging(log, item, attSortOrder,        order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
                         }
                         else if (deleteItems)
                         {
@@ -837,13 +837,10 @@ namespace RiskBowTieNWR.Helpers
                             item.Name = name;
                             item.Description = desc;
                             item.Category = catCauseControl;
-                            SetAttributeWithLogging(log, item, attControlOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
-                            SetAttributeWithLogging(log, item, attControlOpinion,
-                                LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
-                            SetAttributeWithLogging(log, item, attBasisOfOpinion,
-                                XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
-
-                            SetAttributeWithLogging(log, item, attSortOrder, order);
+                            SetAttributeWithLogging(log, item, attControlOwner,     XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
+                            SetAttributeWithLogging(log, item, attControlOpinion,   LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
+                            SetAttributeWithLogging(log, item, attBasisOfOpinion,   XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
+                            SetAttributeWithLogging(log, item, attSortOrder,        order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
                             item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
@@ -871,13 +868,13 @@ namespace RiskBowTieNWR.Helpers
                             item.Description = desc;
                             item.Category = catCauseAction;
 
-                            SetAttributeWithLogging(log, item, attActionOwner, XL1.Sheets[sheet].Cells(row, 21).Text.Trim());
-                            SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 22).Text.Trim());
-                            SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 23).Text.Trim());
-                            SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 24).Text.Trim());
-                            SetAttributeWithLogging(log, item, attPercComplete,
-                                XL1.Sheets[sheet].Cells(row, 25).Text.Trim().Replace("%", ""));
-                            SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 26).Text.Trim());
+                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 20).Text);
+                            SetAttributeWithLogging(log, item, attActionOwner,  XL1.Sheets[sheet].Cells(row, 21).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPriority,     XL1.Sheets[sheet].Cells(row, 22).Text.Trim());
+                            SetAttributeWithLogging(log, item, attBaseline,     XL1.Sheets[sheet].Cells(row, 23).Text.Trim());
+                            SetAttributeWithLogging(log, item, attRevision,     XL1.Sheets[sheet].Cells(row, 24).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPercComplete, XL1.Sheets[sheet].Cells(row, 25).Text.Trim().Replace("%", ""));
+                            SetAttributeWithLogging(log, item, attStatus,       XL1.Sheets[sheet].Cells(row, 26).Text.Trim());
 
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
@@ -905,8 +902,7 @@ namespace RiskBowTieNWR.Helpers
                             item.Name = name;
                             item.Description = desc;
                             item.Category = catConsequence;
-                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 56).Text);
-
+                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 55).Text);
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
                         }
@@ -932,12 +928,9 @@ namespace RiskBowTieNWR.Helpers
                             item.Name = name;
                             item.Description = desc;
                             item.Category = catConsequenceControl;
-                            SetAttributeWithLogging(log, item, attControlOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
-                            SetAttributeWithLogging(log, item, attControlOpinion,
-                                LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
-                            SetAttributeWithLogging(log, item, attBasisOfOpinion,
-                                XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
-
+                            SetAttributeWithLogging(log, item, attControlOwner,     XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
+                            SetAttributeWithLogging(log, item, attControlOpinion,   LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
+                            SetAttributeWithLogging(log, item, attBasisOfOpinion,   XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
@@ -957,7 +950,7 @@ namespace RiskBowTieNWR.Helpers
                         if (!string.IsNullOrWhiteSpace(text))
                         {
                             GetItemNameAndDescription(text, out name, out desc);
-                            order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 44).Text.Trim());
                             extId = _consequenceControlActionsId + $"{order:D2}";
 
                             item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
@@ -966,16 +959,15 @@ namespace RiskBowTieNWR.Helpers
                             item.Description = desc;
                             item.Category = catConsequenceAction;
 
-                            SetAttributeWithLogging(log, item, attActionOwner, XL1.Sheets[sheet].Cells(row, 53).Text.Trim());
-                            SetAttributeWithLogging(log, item, attPriority, XL1.Sheets[sheet].Cells(row, 54).Text.Trim());
-                            SetAttributeWithLogging(log, item, attBaseline, XL1.Sheets[sheet].Cells(row, 55).Text.Trim());
-                            SetAttributeWithLogging(log, item, attRevision, XL1.Sheets[sheet].Cells(row, 56).Text.Trim());
-                            SetAttributeWithLogging(log, item, attPercComplete,
-                                XL1.Sheets[sheet].Cells(row, 57).Text.Trim().Replace("%", ""));
-                            SetAttributeWithLogging(log, item, attStatus, XL1.Sheets[sheet].Cells(row, 58).Text.Trim());
-
+                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 51).Text);
+                            SetAttributeWithLogging(log, item, attActionOwner,  XL1.Sheets[sheet].Cells(row, 52).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPriority,     XL1.Sheets[sheet].Cells(row, 53).Text.Trim());
+                            SetAttributeWithLogging(log, item, attBaseline,     XL1.Sheets[sheet].Cells(row, 54).Text.Trim());
+                            SetAttributeWithLogging(log, item, attRevision,     XL1.Sheets[sheet].Cells(row, 55).Text.Trim());
+                            SetAttributeWithLogging(log, item, attPercComplete, XL1.Sheets[sheet].Cells(row, 56).Text.Trim().Replace("%", ""));
+                            SetAttributeWithLogging(log, item, attStatus,       XL1.Sheets[sheet].Cells(row, 57).Text.Trim());
                             SetAttributeWithLogging(log, item, attSortOrder, order);
-                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
+                            SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order-36));
                         }
                         else if (deleteItems)
                         {
@@ -1001,14 +993,12 @@ namespace RiskBowTieNWR.Helpers
                             item.Description = desc;
                             item.Category = catEWI;
 
-                            SetAttributeWithLogging(log, item, attLinkedControlsTypes,
-                                XL1.Sheets[sheet].Cells(row, 19).Text);
-                            SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 21).Text);
-
+                            SetAttributeWithLogging(log, item, attLinkedControlsTypes,  XL1.Sheets[sheet].Cells(row, 19).Text);
+                            SetAttributeWithLogging(log, item, attLinkedControls,       XL1.Sheets[sheet].Cells(row, 21).Text);
                             //SetAttributeWithLogging(log, item, attPrior, XL1.Sheets[sheet].Cells(row, 35).Text);
                             SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 35).Text);
+                            SetAttributeWithLogging(log, item, attTolerance, XL1.Sheets[sheet].Cells(row, 36).Text);
                             SetAttributeWithLogging(log, item, attWithinTolerance, XL1.Sheets[sheet].Cells(row, 37).Text);
-
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
@@ -1036,35 +1026,17 @@ namespace RiskBowTieNWR.Helpers
                         var rels = item.GetAttributeValueAsText(attLinkedControls);
                         foreach (var r in rels.Split(','))
                         {
+                            if (string.IsNullOrEmpty(r))
+                            {
+                                log.Log($"Warning: '{item.Name}' has no related controls");
+                                break;
+                            }
                             var i = GetInt(r);
                             var ex = _causeControlsId + $"{i:D2}";
                             var itm = story.Item_FindByExternalId(ex);
                             if (itm != null)
                             {
                                 item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
-                            }
-                            else
-                            {
-                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
-                            }
-                        }
-                    }
-
-                    // Consequences
-                    extId = _consequenceId + $"{c:D2}";
-                    item = story.Item_FindByExternalId(extId);
-                    if (item != null)
-                    {
-                        //log.Log($"processing rels for {item.Name}");
-                        var rels = item.GetAttributeValueAsText(attLinkedControls);
-                        foreach (var r in rels.Split(','))
-                        {
-                            var i = GetInt(r);
-                            var ex = _consequenceControlsId + $"{i:D2}";
-                            var itm = story.Item_FindByExternalId(ex);
-                            if (itm != null)
-                            {
-                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
                             }
                             else
                             {
@@ -1121,6 +1093,56 @@ namespace RiskBowTieNWR.Helpers
                                 {
                                     log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
                                 }
+                            }
+                        }
+                    }
+                }
+
+                // cause and consequence actions
+                for (int c = 1; c <= 36; c++)
+                {
+                    // Cause-Actions
+                    extId = _causeControlActionsId + $"{c:D2}";
+                    item = story.Item_FindByExternalId(extId);
+                    if (item != null)
+                    {
+                        //log.Log($"processing rels for {item.Name}");
+                        var rels = item.GetAttributeValueAsText(attLinkedControls);
+                        foreach (var r in rels.Split(','))
+                        {
+                            var i = GetInt(r);
+                            var ex = _causeControlsId + $"{i:D2}";
+                            var itm = story.Item_FindByExternalId(ex);
+                            if (itm != null)
+                            {
+                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                            }
+                            else
+                            {
+                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
+                            }
+                        }
+                    }
+
+                    // Consequence-Actions
+                    extId = _consequenceControlActionsId + $"{c + 36:D2}";
+                    item = story.Item_FindByExternalId(extId);
+                    if (item != null)
+                    {
+                        //log.Log($"processing rels for {item.Name}");
+                        var rels = item.GetAttributeValueAsText(attLinkedControls);
+                        foreach (var r in rels.Split(','))
+                        {
+                            var i = GetInt(r);
+                            var ex = _consequenceControlsId + $"{i:D2}";
+                            var itm = story.Item_FindByExternalId(ex);
+                            if (itm != null)
+                            {
+                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                            }
+                            else
+                            {
+                                log.Log($"Warning: Could not create relationships from '{item.Name}' to '{ex}'");
                             }
                         }
                     }

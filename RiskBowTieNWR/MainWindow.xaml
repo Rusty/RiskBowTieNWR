@@ -7,7 +7,7 @@
         xmlns:viewModels="clr-namespace:RiskBowTieNWR.ViewModels"
         xmlns:converters="clr-namespace:RiskBowTieNWR.Converters"
         mc:Ignorable="d"
-        Title="SharpCloud Risk Bow Tie for NetworkRail v1.1.3" Height="650" Width="925" Background="#000000" FontSize="18">
+        Title="SharpCloud Risk Bow Tie for NetworkRail v1.2.0" Height="650" Width="925" Background="#000000" FontSize="18">
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>
@@ -148,7 +148,7 @@
                     <StackPanel VerticalAlignment="Bottom" Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Content="  Select All  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectAll_Click" />
                         <Button Content="  Select None  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectNon_Click" />
-                        <Button Content="  Migrate  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectMigrate_Click" />
+                        <Button Visibility="Collapsed" Content="  Migrate  " Height="30" Margin="5,10" Background="#00AFFC" Foreground="White" Click="SelectMigrate_Click" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" >
