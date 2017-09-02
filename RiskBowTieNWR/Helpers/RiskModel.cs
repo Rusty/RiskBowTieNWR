@@ -773,8 +773,8 @@ namespace RiskBowTieNWR.Helpers
                 SetAttributeWithLogging(log, risk, attAppetitePolitical, LookupYesNoRiskLabel(XL1.Sheets[sheet].Cells(37, 35).Text));
                 SetAttributeWithLogging(log, risk, attRationalePolitical, XL1.Sheets[sheet].Cells(35, 19).Text);
 
-                SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel(XL1.Sheets[sheet].Cells(2, 79).Text)); //TODO
-                SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel(XL1.Sheets[sheet].Cells(1, 79).Text)); //TODO
+                SetAttributeWithLogging(log, risk, attLikelihood, LookupRiskLabel(XL1.Sheets[sheet].Cells(2, 78).Text)); //TODO
+                SetAttributeWithLogging(log, risk, attImpact, LookupRiskLabel(XL1.Sheets[sheet].Cells(1, 78).Text)); //TODO
                 SetAttributeWithLogging(log, risk, attRationale, XL1.Sheets[sheet].Cells(40, 19).Text);
 
                 SetAttributeWithLogging(log, risk, attReportingPriority, GetReportingPriority(0));
@@ -971,7 +971,7 @@ namespace RiskBowTieNWR.Helpers
                         }
                         else if (deleteItems)
                         {
-                            order = GetInt(XL1.Sheets[sheet].Cells(row, 32).Text.Trim());
+                            order = GetInt(XL1.Sheets[sheet].Cells(row, 44).Text.Trim());
                             extId = _consequenceControlActionsId + $"{order:D2}";
                             DeleteItemWithLogging(log, story, extId);
                         }
