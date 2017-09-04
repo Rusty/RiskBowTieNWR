@@ -794,6 +794,21 @@ namespace RiskBowTieNWR.Helpers
                 string name;
                 string desc;
                 string text;
+
+                //special code to delete old consequence actions
+                if (deleteItems)
+                {
+                    for (int i=1;i<=36;i++)
+                    {
+                        extId = _consequenceControlActionsId + $"{i:D2}";
+                        DeleteItemWithLogging(log, story, extId);
+                    }
+
+                    DeleteItemWithLogging(log, story, _causeControls + $"{0:D2}");
+                    DeleteItemWithLogging(log, story, _consequenceControls + $"{0:D2}");
+                }
+
+
                 // data can be in the same place on 3 sheets (continuation sheets)
                 for (sheet = 1; sheet <= 3; sheet++)
                 {
