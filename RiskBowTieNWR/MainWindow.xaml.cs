@@ -335,7 +335,7 @@ namespace RiskBowTieNWR
                     try
                     {
                         var story = client.LoadStory(storyId);
-                        RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger, chkDelete.IsChecked==true);
+                        RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger, chkDelete.IsChecked==true, chkDeleteRels.IsChecked == true);
                         story.Save();
                     }
                     catch (Exception ex)

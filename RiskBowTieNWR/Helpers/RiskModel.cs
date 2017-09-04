@@ -625,7 +625,7 @@ namespace RiskBowTieNWR.Helpers
         }
 
 
-        public static void CreateStoryFromXLTemplate(Story story, string XLFilename, Logger log, bool deleteItems)
+        public static void CreateStoryFromXLTemplate(Story story, string XLFilename, Logger log, bool deleteItems, bool deleteRels)
         {
             EnsureStoryHasRightStructure(story, log);
 
@@ -719,6 +719,9 @@ namespace RiskBowTieNWR.Helpers
                     return;
                 }
 
+                var list = new Dictionary<string, Relationship>();
+                foreach (var rel in story.Relationships)
+                    list.Add(rel.Id, rel);
 
                 // set the story name
                 var level = XL1.Sheets[sheet].Cells(3, 4).Text;
@@ -858,7 +861,7 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attSortOrder,        order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
-                            item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
+                            RemoveRelFromList(list, item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB));
                         }
                         else if (deleteItems)
                         {
@@ -949,7 +952,7 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
-                            item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
+                            RemoveRelFromList(list, item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA));
                         }
                         else if (deleteItems)
                         {
@@ -1051,7 +1054,7 @@ namespace RiskBowTieNWR.Helpers
                             var itm = story.Item_FindByExternalId(ex);
                             if (itm != null)
                             {
-                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                                RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
                             }
                             else
                             {
@@ -1074,7 +1077,7 @@ namespace RiskBowTieNWR.Helpers
                             var itm = story.Item_FindByExternalId(ex);
                             if (itm != null)
                             {
-                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA);
+                                RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA));
                             }
                             else
                             {
@@ -1102,7 +1105,7 @@ namespace RiskBowTieNWR.Helpers
                                 var itm = story.Item_FindByExternalId(ex);
                                 if (itm != null)
                                 {
-                                    item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                                    RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
                                 }
                                 else
                                 {
@@ -1130,7 +1133,7 @@ namespace RiskBowTieNWR.Helpers
                             var itm = story.Item_FindByExternalId(ex);
                             if (itm != null)
                             {
-                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                                RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
                             }
                             else
                             {
@@ -1153,7 +1156,7 @@ namespace RiskBowTieNWR.Helpers
                             var itm = story.Item_FindByExternalId(ex);
                             if (itm != null)
                             {
-                                item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB);
+                                RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
                             }
                             else
                             {
@@ -1161,6 +1164,12 @@ namespace RiskBowTieNWR.Helpers
                             }
                         }
                     }
+                }
+
+                if (deleteRels)
+                {
+                    foreach (var l in list)
+                        story.Relationship_DeleteById(l.Key);
                 }
 
                 GC.Collect();
@@ -1180,6 +1189,12 @@ namespace RiskBowTieNWR.Helpers
                 log.LogError(ex);
             }
             
+        }
+
+        private static void RemoveRelFromList(Dictionary<string, Relationship> list, Relationship rel)
+        {
+            if (list.ContainsKey(rel.Id))
+                list.Remove(rel.Id);
         }
 
         private static void GetItemNameAndDescription(string text, out string name, out string desc)
