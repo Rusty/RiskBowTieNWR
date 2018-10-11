@@ -33,7 +33,7 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrLinkedControls = "Linked Controls";
         private const string _attrLinkedControlsTypes = "Linked Control Type";
         private const string _attrRationale = "Rationale (Overall)";
-        private const string _attrRationaleSafety = "Rationale (Safety)";
+        private const string _attrRationaleSafety = "Rationale (SHE)";
         private const string _attrRationalePerformance = "Rationale (Performance)";
         private const string _attrRationaleValue = "Rationale (Finance/Value)";
         private const string _attrRationalePolitical = "Rationale (Political/Reputation)";
@@ -60,7 +60,7 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrImpactedArea = "Key Scorecard Area Impacted";
         private const string _attrControlRating = "Overall Control Rating";
         private const string _attrRiskLevel = "Risk Level";
-        private const string _attrRiskAppetiteSafety = "Above Safety Risk Appetite";
+        private const string _attrRiskAppetiteSafety = "Above SHE Risk Appetite";
         private const string _attrRiskAppetitePerformance = "Above Performance Risk Appetite";
         private const string _attrRiskAppetiteValue = "Above Finance/Value Risk Appetite";
         private const string _attrRiskAppetitePolitical = "Above Political/Reputation Risk Appetite";
@@ -69,14 +69,16 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrGrossRating = "Gross Rating";
         private const string _attrTargetRating = "Target Rating";
         private const string _attrWithinTolerance = "Within Tolerance";
+        private const string _attrRiskType = "Risk Type";
+
         private static readonly string[] _listFields = { _attrControlOpinion, _attrBasisOfOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
             _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority, _attrDirectorate,
-            _attrGrossRating,  _attrTargetRating, _attrWithinTolerance };
+            _attrGrossRating,  _attrTargetRating, _attrWithinTolerance, _attrRiskType };
 
         private const string _attrLikelihood = "Likelihood (Overall)";
         private const string _attrImpact = "Impact (Overall)";
-        private const string _attrLikelihoodSafety = "Likelihood (Safety)";
-        private const string _attrImpactSafety = "Impact (Safety)";
+        private const string _attrLikelihoodSafety = "Likelihood (SHE)";
+        private const string _attrImpactSafety = "Impact (SHE)";
         private const string _attrLikelihoodPerformance = "Likelihood (Performance)";
         private const string _attrImpactPerformance = "Impact (Performace)";
         private const string _attrLikelihoodValue = "Likelihood (Finance/Value)";
@@ -125,6 +127,17 @@ namespace RiskBowTieNWR.Helpers
         private const string _consequenceControlActionsId = "CONSQ_ACTION";
 
         private const string _multipleValues = "Multiple Values";
+
+
+        // relationship fields
+        private const string _attrControlOpinionRels = "Control Opinion";
+        private const string _attrControlBasisOfOpinionRels = "Basis of Opinion";
+        private static readonly string[] _listFieldsRels = { _attrControlBasisOfOpinionRels, _attrControlOpinionRels };
+
+        private const string _attrControlOwnerRels = "Control Owner";
+        private static readonly string[] _textFieldsRels = { _attrControlOwnerRels };
+
+        
 
         public static void EnsureStoryHasRightStructure(Story story, Logger log)
         {
@@ -182,6 +195,24 @@ namespace RiskBowTieNWR.Helpers
                         log.Log($"Adding List Label '{l}'");
                         att.Labels_Add(l);
                     }
+                }
+            }
+
+            // add the relationship attributes
+            foreach (var a in _textFieldsRels)
+            {
+                if (story.RelationshipAttribute_FindByName(a) == null)
+                {
+                    log.Log($"Adding Relationship Text Attribute '{a}'");
+                    story.RelationshipAttribute_Add(a, RelationshipAttribute.RelationshipAttributeType.Text);
+                }
+            }
+            foreach (var a in _listFieldsRels)
+            {
+                if (story.RelationshipAttribute_FindByName(a) == null)
+                {
+                    log.Log($"Adding Relationship List Attribute '{a}'");
+                    story.RelationshipAttribute_Add(a, RelationshipAttribute.RelationshipAttributeType.List);
                 }
             }
         }
@@ -625,7 +656,7 @@ namespace RiskBowTieNWR.Helpers
         }
 
 
-        public static void CreateStoryFromXLTemplate(Story story, string XLFilename, Logger log, bool deleteItems, bool deleteRels)
+        public static void CreateStoryFromXLTemplate(Story story, Story controlStory,string XLFilename, Logger log, bool deleteItems, bool deleteRels)
         {
             EnsureStoryHasRightStructure(story, log);
 
@@ -699,7 +730,13 @@ namespace RiskBowTieNWR.Helpers
             var attRiskLevel = story.Attribute_FindByName(_attrRiskLevel);
             var attReportingPriority = story.Attribute_FindByName(_attrReportingPriority);
             var attDirectorate = story.Attribute_FindByName(_attrDirectorate);
+            var attRiskType = story.Attribute_FindByName(_attrRiskType);
 
+
+            // relationship attributes
+            var attBasisOfOpinionRels = story.RelationshipAttribute_FindByName(_attrControlBasisOfOpinionRels);
+            var attControlOwnerRels = story.RelationshipAttribute_FindByName(_attrControlOwnerRels);
+            var attControlOpinionRels = story.RelationshipAttribute_FindByName(_attrControlOpinionRels);
 
             try
             {
@@ -718,6 +755,13 @@ namespace RiskBowTieNWR.Helpers
                     KillProcessByMainWindowHwnd(XL1.Application.Hwnd);
                     return;
                 }
+                string version2 = XL1.Sheets["ERR"].Cells[1, 14].Text;
+                if (!version2.Contains("v4"))
+                {
+                    log.Log($"Spreadsheet is not in the approved version, missing 'v4x' at 'N:1' in 'ERR' ");
+                    KillProcessByMainWindowHwnd(XL1.Application.Hwnd);
+                    return;
+                }
 
                 var list = new Dictionary<string, Relationship>();
                 foreach (var rel in story.Relationships)
@@ -733,6 +777,8 @@ namespace RiskBowTieNWR.Helpers
                 Item risk = story.Item_FindByExternalId(_riskId) ?? story.Item_AddNew(title, false);
                 risk.ExternalId = _riskId;
                 risk.Description = XL1.Sheets[sheet].Cells(3, 19).Text;
+                SetAttributeWithLogging(log, risk, attRiskType, XL1.Sheets[sheet].Cells(2, 19).Text); // THREAT or OPPORTUNITY
+ 
                 risk.Category = catRisk;
                 SetAttributeWithLogging(log, risk, attClassification, XL1.Sheets[sheet].Cells(2, 4).Text);
                 SetAttributeWithLogging(log, risk, attRiskLevel, level);
@@ -741,7 +787,7 @@ namespace RiskBowTieNWR.Helpers
                 SetAttributeWithLogging(log, risk, attRiskOwner, XL1.Sheets[sheet].Cells(6, 4).Text);
                 SetAttributeWithLogging(log, risk, attManager, XL1.Sheets[sheet].Cells(7, 4).Text);
                 SetAttributeWithLogging(log, risk, attImapactedArea, LookupRiskLabel(XL1.Sheets[sheet].Cells(8, 4).Text));
-                SetAttributeWithLogging(log, risk, attControlRating, XL1.Sheets[sheet].Cells(9, 4).Text);
+                SetAttributeWithLogging(log, risk, attControlRating, XL1.Sheets[sheet].Cells(39, 30).Text); // new position on template
                 SetAttributeWithLogging(log, risk, attVersion, XL1.Sheets[sheet].Cells(10, 4).Text);
                 SetAttributeWithLogging(log, risk, attLastUpdate, XL1.Sheets[sheet].Cells(11, 4).Text);
 
@@ -850,18 +896,54 @@ namespace RiskBowTieNWR.Helpers
                             order = GetInt(XL1.Sheets[sheet].Cells(row, 2).Text.Trim());
                             extId = _causeControlsId + $"{order:D2}";
 
+                            var words = name.Split(' ');
+                            Item itemShared = null;
+                            if (words.Any())
+                            {
+                                // a shared item exists in the control library
+                                itemShared = controlStory.Item_FindByExternalId(words[0]);
+                            }
+
+                            if (itemShared != null) // not shared control - create a local one
+                            {
+                                log.Log($"NOT YET IMPLEMENTED BUT Detected shared control '{itemShared.Name}'");
+                            }
                             item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
                             item.ExternalId = extId;
                             item.Name = name;
                             item.Description = desc;
                             item.Category = catCauseControl;
-                            SetAttributeWithLogging(log, item, attControlOwner,     XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
-                            SetAttributeWithLogging(log, item, attControlOpinion,   LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
-                            SetAttributeWithLogging(log, item, attBasisOfOpinion,   XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
-                            SetAttributeWithLogging(log, item, attSortOrder,        order);
+                            SetAttributeWithLogging(log, item, attControlOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
+                            SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
+                            SetAttributeWithLogging(log, item, attBasisOfOpinion, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
+                            SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
-                            RemoveRelFromList(list, item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB));
+                            var rel = item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
+                            rel.SetAttributeValue(attControlOwnerRels, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
+                            rel.SetAttributeValue(attControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
+                            rel.SetAttributeValue(attBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
+
+                            RemoveRelFromList(list, rel);
+
+                            /*else
+                            {
+                                item = story.Item_FindByExternalId(words[0]);
+                                if (item != null)
+                                {
+                                    if (item.Id != itemShared.Id) // it's not the right shared item
+                                    {
+                                        story.Item_DeleteById(item.Id);
+                                        item = null;
+                                    }   
+                                }
+                                if (item == null) // safe to add new
+                                {
+                                    story.StoryAsRoadmap.Elements.Add(itemShared.AsElement);
+                                }
+                            }
+                            */
+
                         }
                         else if (deleteItems)
                         {
@@ -952,7 +1034,14 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
-                            RemoveRelFromList(list, item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA));
+                            var rel = item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
+                            rel.SetAttributeValue(attControlOwnerRels, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
+                            rel.SetAttributeValue(attControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
+                            rel.SetAttributeValue(attBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
+
+                            RemoveRelFromList(list, rel);
+                            
+                            //RemoveRelFromList(list, item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA));
                         }
                         else if (deleteItems)
                         {
@@ -1014,8 +1103,8 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attLinkedControlsTypes,  XL1.Sheets[sheet].Cells(row, 19).Text);
                             SetAttributeWithLogging(log, item, attLinkedControls,       XL1.Sheets[sheet].Cells(row, 21).Text);
                             //SetAttributeWithLogging(log, item, attPrior, XL1.Sheets[sheet].Cells(row, 35).Text);
-                            SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 35).Text);
-                            SetAttributeWithLogging(log, item, attTolerance, XL1.Sheets[sheet].Cells(row, 36).Text);
+                            SetAttributeWithLogging(log, item, attCurrent, XL1.Sheets[sheet].Cells(row, 33).Text);
+                            SetAttributeWithLogging(log, item, attTolerance, XL1.Sheets[sheet].Cells(row, 35).Text);
                             SetAttributeWithLogging(log, item, attWithinTolerance, XL1.Sheets[sheet].Cells(row, 37).Text);
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));

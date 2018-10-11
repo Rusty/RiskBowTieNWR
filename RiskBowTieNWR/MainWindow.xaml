@@ -7,7 +7,7 @@
         xmlns:viewModels="clr-namespace:RiskBowTieNWR.ViewModels"
         xmlns:converters="clr-namespace:RiskBowTieNWR.Converters"
         mc:Ignorable="d"
-        Title="SharpCloud Risk Bow Tie for NetworkRail v1.2.5" Height="650" Width="925" Background="#000000" FontSize="18">
+        Title="SharpCloud Risk Bow Tie for NetworkRail v1.3.0" Height="650" Width="925" Background="#000000" FontSize="18">
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>
@@ -103,7 +103,7 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="150" />
                         <ColumnDefinition Width="40"/>
                         <ColumnDefinition Width="400"/>
                     </Grid.ColumnDefinitions>
@@ -112,19 +112,19 @@
                     <Button Grid.Row="0" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectTeam_Click"/>
                     <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding SelectedTeamName}" />
 
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Template:" />
-                    <Button Grid.Row="1" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectTemplate_Click"/>
-                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SelectedTemplateName}" />
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Control Story:" />
+                    <Button Grid.Row="1" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectControl_Click"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SelectedControlName}" />
 
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Portfolio:" />
-                    <Button Grid.Row="2" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectPortfolio_Click"/>
-                    <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding SelectedPortfolioName}" />
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Sample Story:" />
+                    <Button Grid.Row="2" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectTemplate_Click"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding SelectedTemplateName}" />
 
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Control:" />
-                    <Button Grid.Row="3" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectControl_Click"/>
-                    <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding SelectedControlName}" />
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Portfolio:" />
+                    <Button Grid.Row="3" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectPortfolio_Click"/>
+                    <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding SelectedPortfolioName}" />
 
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Data Folder:" />
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="XL Data Folder:" />
                     <Button Grid.Row="5" Grid.Column="1" Width="30" Background="#00AFFC" Foreground="White" HorizontalAlignment="Left" Content="..." Click="SelectFolder_Click"/>
                     <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding SelectedDataFolder}" TextWrapping="Wrap"/>
                 </Grid>
@@ -163,7 +163,7 @@
 
                 </Grid>
             </TabItem>
-            <TabItem Header="Rollup">
+            <TabItem Header="Rollup" Visibility="Collapsed">
                 <Grid>
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Orientation="Horizontal">
                         <Button Height="30" VerticalAlignment="Top" Margin="10" Content=" Process Now " Background="#00AFFC" Foreground="White" Click="ProcessPortfolio_Click" />

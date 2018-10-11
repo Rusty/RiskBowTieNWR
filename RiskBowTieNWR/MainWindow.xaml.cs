@@ -16,7 +16,7 @@ using RiskBowTieNWR.Helpers;
 using RiskBowTieNWR.ViewModels;
 using RiskBowTieNWR.Views;
 using SC.API.ComInterop;
-
+using SC.API.ComInterop.Models;
 
 namespace RiskBowTieNWR
 {
@@ -68,7 +68,7 @@ namespace RiskBowTieNWR
                 _viewModel.Password = tbPassword.Password;
 
                 _viewModel.SaveAllData();
-                MessageBox.Show("Well done! Your credentials have been validated.");
+                MessageBox.Show("Awesome! Your credentials appear to be correct.");
             }
             else
             {
@@ -286,6 +286,18 @@ namespace RiskBowTieNWR
 
                 // does the risk story already exist?
 
+                Story sampleStory = null;
+                try
+                {
+                    logger.Log($"Loading sample '{_viewModel.SelectedTemplateStory.Name}'");
+                    client.LoadStory(_viewModel.SelectedTemplateStory.Id);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError($"Unable to load sample '{_viewModel.SelectedTemplateStory.Name}'");
+
+                }
+
                 string storyId = RiskModel.GetExcelTemplateStoryID(f.FullPath, logger);
                 if (string.IsNullOrEmpty(storyId))
                 {
@@ -298,6 +310,7 @@ namespace RiskBowTieNWR
                     {
                         try
                         {
+                            s.StoryAsRoadmap.PackID = sampleStory.StoryAsRoadmap.PackID; // make sure new stories are part of the same pack
                             s.StoryAsRoadmap.TeamID = _viewModel.SelectedTeam.Id;
                             s.StoryAsRoadmap.ImageID = new Guid(_viewModel.SelectedTemplateStory.ImageId);
                             s.Save();
@@ -327,6 +340,21 @@ namespace RiskBowTieNWR
                     await Task.Delay(100);
                 }
 
+                logger.Log($"Loading Control Story '{_viewModel.SelectedControlStory.Name}'");
+                await Task.Delay(100);
+                Story controlStory = null;
+                try
+                {
+                    controlStory = client.LoadStory(_viewModel.SelectedControlStory.Id);
+                    //RiskModel.EnsureStoryHasRightStructure(controlStory, logger);
+                    //controlStory.Save();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Unable to load story '{_viewModel.SelectedControlStory.Name}'");
+                    await Task.Delay(100);
+                }
+                
                 // now ready to load story and update
                 if (!string.IsNullOrEmpty(storyId))
                 {
@@ -335,7 +363,7 @@ namespace RiskBowTieNWR
                     try
                     {
                         var story = client.LoadStory(storyId);
-                        RiskModel.CreateStoryFromXLTemplate(story, f.FullPath, logger, chkDelete.IsChecked==true, chkDeleteRels.IsChecked == true);
+                        RiskModel.CreateStoryFromXLTemplate(story, controlStory, f.FullPath, logger, chkDelete.IsChecked==true, chkDeleteRels.IsChecked == true);
                         story.Save();
                     }
                     catch (Exception ex)

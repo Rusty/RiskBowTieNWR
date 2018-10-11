@@ -114,7 +114,7 @@ namespace RiskBowTieNWR.ViewModels
 
         public string SelectedTeamName
         {
-            get { return SelectedTeam.Name; }
+            get { return SelectedTeam?.Name; }
         }    
 
         public TeamLite SelectedTeam
@@ -183,15 +183,15 @@ namespace RiskBowTieNWR.ViewModels
 
         public string SelectedTemplateName
         {
-            get { return SelectedTemplateStory.Name; }
+            get { return SelectedTemplateStory?.Name; }
         }
         public string SelectedPortfolioName
         {
-            get { return SelectedPortfolioStory.Name; }
+            get { return SelectedPortfolioStory?.Name; }
         }
         public string SelectedControlName
         {
-            get { return SelectedControlStory.Name; }
+            get { return SelectedControlStory?.Name; }
         }
 
         public ObservableCollection<FileObject> FileList
