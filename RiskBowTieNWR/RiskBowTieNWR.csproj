@@ -29,7 +29,7 @@
     <InstallUrl>https://sharpcloudonpremupdate.blob.core.windows.net:443/apidemos/NWRRiskBowTie/</InstallUrl>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>26</ApplicationRevision>
+    <ApplicationRevision>27</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -73,12 +73,6 @@
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
-    </Reference>
-    <Reference Include="SC.Api, Version=1.0.36.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.36\lib\SC.Api.dll</HintPath>
-    </Reference>
-    <Reference Include="SC.API.ComInterop, Version=1.0.36.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.36\lib\SC.API.ComInterop.dll</HintPath>
     </Reference>
     <Reference Include="SC.Framework, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpCloud.ClientAPI.1.0.36\lib\SC.Framework.dll</HintPath>
@@ -190,6 +184,16 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\sharpcloud\Solutions\SC.API.ComInterop\SC.API.ComInterop.csproj">
+      <Project>{a8cfbb13-e5f8-41ef-92eb-63a97099f565}</Project>
+      <Name>SC.API.ComInterop</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\sharpcloud\Solutions\SC.Api\SC.Api.csproj">
+      <Project>{f8019c77-80a4-4c01-a7e2-6a041a96c0f2}</Project>
+      <Name>SC.Api</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

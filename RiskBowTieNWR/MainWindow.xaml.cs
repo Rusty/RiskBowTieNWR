@@ -290,12 +290,18 @@ namespace RiskBowTieNWR
                 try
                 {
                     logger.Log($"Loading sample '{_viewModel.SelectedTemplateStory.Name}'");
-                    client.LoadStory(_viewModel.SelectedTemplateStory.Id);
+                    sampleStory = client.LoadStory(_viewModel.SelectedTemplateStory.Id);
                 }
                 catch (Exception e)
                 {
                     logger.LogError($"Unable to load sample '{_viewModel.SelectedTemplateStory.Name}'");
+                }
 
+                if (sampleStory == null)
+                {
+                    logger.Log($"Unable to load the Sample '{_viewModel.SelectedTemplateStory.Name}' - PROCESS ABORTING!");
+                    await Task.Delay(100);
+                    return;
                 }
 
                 string storyId = RiskModel.GetExcelTemplateStoryID(f.FullPath, logger);
@@ -306,10 +312,11 @@ namespace RiskBowTieNWR
                     await Task.Delay(100);
 
                     var s = client.NewStory(f.Name, _viewModel.SelectedTemplateStory.Id);
-                    if (s != null)
+                    if (s != null && s.Id != null)
                     {
                         try
                         {
+                            s = client.LoadStory(s.Id);
                             s.StoryAsRoadmap.PackID = sampleStory.StoryAsRoadmap.PackID; // make sure new stories are part of the same pack
                             s.StoryAsRoadmap.TeamID = _viewModel.SelectedTeam.Id;
                             s.StoryAsRoadmap.ImageID = new Guid(_viewModel.SelectedTemplateStory.ImageId);
@@ -363,7 +370,7 @@ namespace RiskBowTieNWR
                     try
                     {
                         var story = client.LoadStory(storyId);
-                        RiskModel.CreateStoryFromXLTemplate(story, controlStory, f.FullPath, logger, chkDelete.IsChecked==true, chkDeleteRels.IsChecked == true);
+                        RiskModel.CreateStoryFromXLTemplate(story, controlStory, f.FullPath, logger, chkDelete.IsChecked==true, chkDeleteRels.IsChecked == true, chkVerbose.IsChecked == true);
                         story.Save();
                     }
                     catch (Exception ex)
