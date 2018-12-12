@@ -137,7 +137,7 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrControlOwnerRels = "Control Owner";
         private static readonly string[] _textFieldsRels = { _attrControlOwnerRels };
 
-        private static Dictionary<string, Item> _itemDictionary = null;
+        private static Dictionary<string, Item> _sharedControlDictionary = null;
 
 
         public static void EnsureStoryHasRightStructure(Story story, Logger log)
@@ -218,6 +218,18 @@ namespace RiskBowTieNWR.Helpers
             }
         }
 
+        public static void EnsureControlStoryHasRightStructure(Story controlstory, Logger log)
+        {
+            foreach (var a in _listFieldsRels)
+            {
+                if (controlstory.RelationshipAttribute_FindByName(a) == null)
+                {
+                    log.Log($"Adding Relationship List Attribute '{a}'");
+                    controlstory.RelationshipAttribute_Add(a, RelationshipAttribute.RelationshipAttributeType.List);
+                }
+            }
+        }
+        
         public static string LookupControlOpinion(string o)
         {
             // Converts 'E' or 'I' to full word
@@ -659,10 +671,11 @@ namespace RiskBowTieNWR.Helpers
 
         public static void CreateStoryFromXLTemplate(Story story, Story controlStory,string XLFilename, Logger log, bool deleteItems, bool deleteRels, bool verbose)
         {
-            _itemDictionary = new Dictionary<string, Item>();
+            _sharedControlDictionary = new Dictionary<string, Item>();
 
             if (verbose) log.Log("Checking structure");
             EnsureStoryHasRightStructure(story, log);
+            EnsureControlStoryHasRightStructure(controlStory, log);
 
             // get categories
             var catRisk = story.Category_FindByName(_risk);
@@ -740,6 +753,11 @@ namespace RiskBowTieNWR.Helpers
             var attBasisOfOpinionRels = story.RelationshipAttribute_FindByName(_attrControlBasisOfOpinionRels);
             var attControlOwnerRels = story.RelationshipAttribute_FindByName(_attrControlOwnerRels);
             var attControlOpinionRels = story.RelationshipAttribute_FindByName(_attrControlOpinionRels);
+
+            var attCBasisOfOpinionRels = controlStory.RelationshipAttribute_FindByName(_attrControlBasisOfOpinionRels);
+            var attCControlOwnerRels = controlStory.RelationshipAttribute_FindByName(_attrControlOwnerRels);
+            var attCControlOpinionRels = controlStory.RelationshipAttribute_FindByName(_attrControlOpinionRels);
+
 
             try
             {
@@ -886,8 +904,6 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attLinkedControls,   XL1.Sheets[sheet].Cells(row, 16).Text);
                             SetAttributeWithLogging(log, item, attSortOrder,        order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                            _itemDictionary.Add(extId, item);
                         }
                         else if (deleteItems)
                         {
@@ -916,31 +932,11 @@ namespace RiskBowTieNWR.Helpers
                                 itemShared = controlStory.Item_FindByExternalId(words[0]);
                             }
 
-                            if (itemShared != null) // shuld be a shared control 
-                            {
-                                log.Log($"DETECTED SHARED CONTROL '{words[0]}'");
-                                log.Log($"'{itemShared.Name}'");
-                                // does it already exist?
-                                item = story.Item_FindByExternalId(itemShared.ExternalId);
-                                if (item == null)
-                                {
-                                    log.Log($"ADDING SHARED CONTROL '{words[0]}'");
-                                    item = story.Item_AddShared(controlStory, itemShared.Id);
-                                }
-                                // add the user description of the control in this context
-                                var panel = item.Panel_FindByTitle("Control Description");
-                                if (panel == null)
-                                    panel = item.Panel_Add("Control Description", Panel.PanelType.RichText);
-                                panel.Data = desc;
-                            }
-                            else
-                            {
-                                item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                                item.ExternalId = extId;
-                                item.Name = name;
-                                item.Description = desc;
-                                item.Category = catCauseControl;
-                            }
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catCauseControl;
                             // awlays try to set these
                             SetAttributeWithLogging(log, item, attControlOwner, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
                             SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
@@ -948,12 +944,25 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
                         
-                            _itemDictionary.Add(extId, item);
                             var rel = item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
                             SetRelAttributeWithLogging(log, rel, attControlOwnerRels, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
                             SetRelAttributeWithLogging(log, rel, attControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
                             SetRelAttributeWithLogging(log, rel, attBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
 
+                            if (itemShared != null) // should be a shared control 
+                            {
+                                log.Log($"DETECTED SHARED CONTROL '{words[0]}'");
+                                log.Log($"'{itemShared.Name}'");
+
+                                var rel2 = itemShared.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
+                                SetRelAttributeWithLogging(log, rel2, attCControlOwnerRels, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
+                                SetRelAttributeWithLogging(log, rel2, attCControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
+                                SetRelAttributeWithLogging(log, rel2, attCBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
+
+                                itemShared.Relationship_AddItem(item); // no direction
+
+                                _sharedControlDictionary.Add(item.Id, itemShared);
+                            }
                             RemoveRelFromList(list, rel);
 
                         }
@@ -993,8 +1002,6 @@ namespace RiskBowTieNWR.Helpers
 
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                            _itemDictionary.Add(extId, item);
                         }
                         else if (deleteItems)
                         {
@@ -1025,8 +1032,6 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attLinkedControls, XL1.Sheets[sheet].Cells(row, 55).Text);
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
-
-                            _itemDictionary.Add(extId, item);
                         }
                         else if (deleteItems)
                         {
@@ -1055,32 +1060,11 @@ namespace RiskBowTieNWR.Helpers
                                 itemShared = controlStory.Item_FindByExternalId(words[0]);
                             }
 
-                            if (itemShared != null) // shuld be a shared control 
-                            {
-                                log.Log($"DETECTED SHARED CONTROL '{words[0]}'");
-                                log.Log($"'{itemShared.Name}'");
-                                // does it already exist?
-                                item = story.Item_FindByExternalId(itemShared.ExternalId);
-                                if (item == null)
-                                {
-                                    log.Log($"ADDING SHARED CONTROL '{words[0]}'");
-                                    item = story.Item_AddShared(controlStory, itemShared.Id);
-                                }
-                                // add the user description of the control in this context
-                                var panel = item.Panel_FindByTitle("Control Description");
-                                if (panel == null)
-                                    panel = item.Panel_Add("Control Description", Panel.PanelType.RichText);
-                                panel.Data = desc;
-                            }
-                            else
-                            {
-
-                                item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
-                                item.ExternalId = extId;
-                                item.Name = name;
-                                item.Description = desc;
-                                item.Category = catConsequenceControl;
-                            }
+                            item = story.Item_FindByExternalId(extId) ?? story.Item_AddNew(name, false);
+                            item.ExternalId = extId;
+                            item.Name = name;
+                            item.Description = desc;
+                            item.Category = catConsequenceControl;
                             // always try to set these 
                             SetAttributeWithLogging(log, item, attControlOwner, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
                             SetAttributeWithLogging(log, item, attControlOpinion, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
@@ -1088,17 +1072,27 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
                             
-
-                            _itemDictionary.Add(extId, item);
-
                             var rel = item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
                             SetRelAttributeWithLogging(log, rel, attControlOwnerRels, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
                             SetRelAttributeWithLogging(log, rel, attControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
                             SetRelAttributeWithLogging(log, rel, attBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
 
                             RemoveRelFromList(list, rel);
-                            
-                            //RemoveRelFromList(list, item.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA));
+
+                            if (itemShared != null) // should be a shared control 
+                            {
+                                log.Log($"DETECTED SHARED CONTROL '{words[0]}'");
+                                log.Log($"'{itemShared.Name}'");
+
+                                var rel2 = itemShared.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
+                                SetRelAttributeWithLogging(log, rel2, attCControlOwnerRels, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
+                                SetRelAttributeWithLogging(log, rel2, attCControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
+                                SetRelAttributeWithLogging(log, rel2, attCBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
+
+                                itemShared.Relationship_AddItem(item); // no direction
+
+                                _sharedControlDictionary.Add(item.Id, itemShared);
+                            }
                         }
                         else if (deleteItems)
                         {
@@ -1135,8 +1129,6 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attStatus,       XL1.Sheets[sheet].Cells(row, 57).Text.Trim());
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order-36));
-
-                            _itemDictionary.Add(extId, item);
                         }
                         else if (deleteItems)
                         {
@@ -1175,8 +1167,6 @@ namespace RiskBowTieNWR.Helpers
                             SetAttributeWithLogging(log, item, attSortOrder, order);
                             SetAttributeWithLogging(log, item, attReportingPriority, GetReportingPriority(order));
 
-                            _itemDictionary.Add(extId, item);
-
                             var link = XL1.Sheets[sheet].Cells(row, 19).Text;
                         }
                         else if (deleteItems)
@@ -1213,10 +1203,12 @@ namespace RiskBowTieNWR.Helpers
                             }
                             var i = GetInt(r);
                             var ex = _causeControlsId + $"{i:D2}";
-                            var itm = FindItemByExternalID(ex);
+                            var itm = story.Item_FindByExternalId(ex);
                             if (itm != null)
                             {
                                 RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
+                                if (_sharedControlDictionary.ContainsKey(itm.Id))
+                                    _sharedControlDictionary[itm.Id].Relationship_AddItem(item, "", Relationship.RelationshipDirection.BtoA);
                             }
                             else
                             {
@@ -1237,10 +1229,12 @@ namespace RiskBowTieNWR.Helpers
                         {
                             var i = GetInt(r);
                             var ex = _consequenceControlsId + $"{i:D2}";
-                            var itm = FindItemByExternalID(ex);
+                            var itm = story.Item_FindByExternalId(ex);
                             if (itm != null)
                             {
                                 RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.BtoA));
+                                if (_sharedControlDictionary.ContainsKey(itm.Id))
+                                    _sharedControlDictionary[itm.Id].Relationship_AddItem(item, "", Relationship.RelationshipDirection.AtoB);
                             }
                             else
                             {
@@ -1265,11 +1259,12 @@ namespace RiskBowTieNWR.Helpers
                                 var ex = _causeId + $"{i:D2}";
                                 if (relType == "Conseq.")
                                     ex = _consequenceId + $"{i:D2}";
-
                                 var itm = story.Item_FindByExternalId(ex);
                                 if (itm != null)
                                 {
                                     RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
+                                    if (_sharedControlDictionary.ContainsKey(itm.Id))
+                                        _sharedControlDictionary[itm.Id].Relationship_AddItem(item, "", Relationship.RelationshipDirection.BtoA);
                                 }
                                 else
                                 {
@@ -1299,6 +1294,8 @@ namespace RiskBowTieNWR.Helpers
                             if (itm != null)
                             {
                                 RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
+                                if (_sharedControlDictionary.ContainsKey(itm.Id))
+                                    _sharedControlDictionary[itm.Id].Relationship_AddItem(item, "", Relationship.RelationshipDirection.BtoA);
                             }
                             else
                             {
@@ -1323,6 +1320,8 @@ namespace RiskBowTieNWR.Helpers
                             if (itm != null)
                             {
                                 RemoveRelFromList(list, item.Relationship_AddItem(itm, "", Relationship.RelationshipDirection.AtoB));
+                                if (_sharedControlDictionary.ContainsKey(itm.Id))
+                                    _sharedControlDictionary[itm.Id].Relationship_AddItem(item, "", Relationship.RelationshipDirection.BtoA);
                             }
                             else
                             {
@@ -1338,6 +1337,24 @@ namespace RiskBowTieNWR.Helpers
 
                     foreach (var l in list)
                         story.Relationship_DeleteById(l.Key);
+                }
+
+                // process shared controls
+                foreach (var si in _sharedControlDictionary)
+                {
+                    var li = story.Item_FindById( si.Key );
+                    var sc = si.Value;
+
+                    // add a resource link from the contol library to the control
+                    var res = sc.Resource_FindByName(li.Name) ?? sc.Resource_AddName(li.Name);
+                    res.Description = li.Story.Name;
+                    res.Url = new Uri(li.Url);
+
+                    // add a resource link from the contol library to the control
+                    res = li.Resource_FindByName("Shared Control") ?? li.Resource_AddName("Shared Control");
+                    res.Description = sc.Name;
+                    res.Url = new Uri(sc.Url);
+
                 }
 
                 GC.Collect();
@@ -1357,13 +1374,6 @@ namespace RiskBowTieNWR.Helpers
                 log.LogError(ex);
             }
             
-        }
-
-        private static Item FindItemByExternalID(string extId)
-        {
-            if (_itemDictionary.ContainsKey(extId))
-                return _itemDictionary[extId];
-            return null;// not found
         }
 
         private static void RemoveRelFromList(Dictionary<string, Relationship> list, Relationship rel)

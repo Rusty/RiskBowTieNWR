@@ -379,7 +379,7 @@ namespace RiskBowTieNWR
                         await Task.Delay(100);
                     }
                 }
-
+                controlStory.Save(); // save any changes to control library
 
             }
 

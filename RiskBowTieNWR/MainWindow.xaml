@@ -7,7 +7,7 @@
         xmlns:viewModels="clr-namespace:RiskBowTieNWR.ViewModels"
         xmlns:converters="clr-namespace:RiskBowTieNWR.Converters"
         mc:Ignorable="d"
-        Title="SharpCloud Risk Bow Tie for NetworkRail v1.4.0" Height="650" Width="925" Background="#000000" FontSize="18">
+        Title="SharpCloud Risk Bow Tie for NetworkRail v1.4.1" Height="650" Width="925" Background="#000000" FontSize="18">
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>
@@ -160,7 +160,7 @@
                     </StackPanel>
                     <TextBox Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" Margin="10,90,10,50" IsReadOnly="True" x:Name="loggerTextBox" Foreground="#00AFFC" Text="{Binding ProgressLogText}" FontSize="10"/>
                     <Button Grid.Column="1" Height="30" VerticalAlignment="Bottom" Margin="10" HorizontalAlignment="Right" Content=" View Logs " Background="#00AFFC" Foreground="White" Click="ViewLog_Click" />
-                    <CheckBox Grid.Column="1" x:Name="chkVerbose" Content="Verbose Logging" Foreground="White" VerticalAlignment="Bottom" Margin="10"/>
+                    <CheckBox Grid.Column="1" x:Name="chkVerbose" Content="Verbose Logging" Foreground="White" VerticalAlignment="Bottom" Margin="10" Width="200" HorizontalAlignment="Left"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Rollup" Visibility="Collapsed">
