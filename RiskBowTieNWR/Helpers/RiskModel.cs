@@ -69,7 +69,7 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrGrossRating = "Gross Rating";
         private const string _attrTargetRating = "Target Rating";
         private const string _attrWithinTolerance = "Within Tolerance";
-        private const string _attrRiskType = "Risk Type";
+        private const string _attrRiskType = "Z. Risk Type";
 
         private static readonly string[] _listFields = { _attrControlOpinion, _attrBasisOfOpinion, _attrPriority, _attrStatus, _attrClassification, _attrImpactedArea, _attrControlRating, _attrRiskLevel,
             _attrRiskAppetiteSafety, _attrRiskAppetitePerformance, _attrRiskAppetiteValue,_attrRiskAppetitePolitical, _attrReportingPriority, _attrDirectorate,
@@ -849,7 +849,7 @@ namespace RiskBowTieNWR.Helpers
 
                 SetAttributeWithLogging(log, risk, attReportingPriority, GetReportingPriority(0));
 
-                string tagText = XL1.Sheets["Version Control"].Cells[21, 47].Text;
+                string tagText = XL1.Sheets["Version Control"].Cells[21, 42].Text;
                 var tags = tagText.Split(',');
                 foreach (var t in tags)
                 {
@@ -1354,8 +1354,14 @@ namespace RiskBowTieNWR.Helpers
                     res = li.Resource_FindByName("Shared Control") ?? li.Resource_AddName("Shared Control");
                     res.Description = sc.Name;
                     res.Url = new Uri(sc.Url);
-
                 }
+
+                // add the directorate to all items
+                foreach (var i in story.Items)
+                {
+                    SetAttributeWithLogging(log, i, attDirectorate, directorate);
+                }
+
 
                 GC.Collect();
                 GC.WaitForFullGCComplete();
@@ -1415,11 +1421,11 @@ namespace RiskBowTieNWR.Helpers
             }
             catch (Exception e)
             {
-                var start = (rel.Item1 == null) ? rel.Item1.Name : "unkown";
-                var end = (rel.Item1==null)? rel.Item1.Name : "unkown";
+                var start = (rel.Item1 == null) ? rel.Item1.Name : $"unkown";
+                var end = (rel.Item2==null)? rel.Item2.Name : $"unkown: ";
 
                 log.Log($"ERROR unable to set relationship attribute='{att.Name}', value='{value}'");
-                log.Log($"Relationship between '{start}' and '{end}'");
+                log.Log($"Relationship [{rel.Id}] between '{start}' and '{end}'");
                 log.Log($"Error: {e.Message}");
             }
         }
