@@ -668,9 +668,38 @@ namespace RiskBowTieNWR.Helpers
             XL1.Quit();
         }
 
+        private static void RemoveControlRels(Story story, Story controlStory, Logger log)
+        {
+            try
+            {
+                // create collection of unique element Id's
+                var listIds = new List<string>();
+                foreach (var i in story.Items)
+                {
+                    listIds.Add(i.Id);
+                }
 
+                var toDelete = new List<Relationship>();
+                foreach (var r in controlStory.Relationships)
+                {
+                    var rel = r.AsRelationship;
+                    if (listIds.Contains(rel.Element1ID.ToString()) || listIds.Contains(rel.Element2ID.ToString()))
+                        toDelete.Add(r);
+                }
+                foreach (var rel in toDelete)
+                    controlStory.Relationship_DeleteById(rel.Id);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex);
+            }
+        }
+        
         public static void CreateStoryFromXLTemplate(Story story, Story controlStory,string XLFilename, Logger log, bool deleteItems, bool deleteRels, bool verbose)
         {
+            if (verbose) log.Log("Removing old cross story relationships to Controls Library");
+            RemoveControlRels(story, controlStory, log);
+
             _sharedControlDictionary = new Dictionary<string, Item>();
 
             if (verbose) log.Log("Checking structure");
@@ -761,12 +790,13 @@ namespace RiskBowTieNWR.Helpers
 
             try
             {
+                var sheetNames = new string [] { "ERR", "ERR Cont Sheet 1", "ERR Cont Sheet 2" };
 
                 var XL1 = new Application();
                 var pathMlstn = XLFilename;
                 log.Log($"Opening Excel Doc " + pathMlstn);
                 var wbBowTie = XL1.Workbooks.Open(pathMlstn);
-                var sheet = 1;
+                var sheet = sheetNames[0];
 
                 // validate template is correct version
                 var version = XL1.Sheets["Version Control"].Cells[1, 26].Text;
@@ -863,6 +893,7 @@ namespace RiskBowTieNWR.Helpers
                 string name;
                 string desc;
                 string text;
+                int sht;
 
                 //special code to delete old consequence actions
                 if (deleteItems)
@@ -879,8 +910,9 @@ namespace RiskBowTieNWR.Helpers
 
 
                 // data can be in the same place on 3 sheets (continuation sheets)
-                for (sheet = 1; sheet <= 3; sheet++)
+                for (sht = 0; sht < 3; sht++)
                 {
+                    sheet = sheetNames[sht];
 
                     if (verbose) log.Log($"Processing Sheet{sheet}");
 

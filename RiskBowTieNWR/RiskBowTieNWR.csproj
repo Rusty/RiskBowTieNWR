@@ -29,8 +29,8 @@
     <InstallUrl>https://sharpcloudonpremupdate.blob.core.windows.net:443/apidemos/NWRRiskBowTie/</InstallUrl>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>31</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <ApplicationRevision>2</ApplicationRevision>
+    <ApplicationVersion>1.4.4.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -75,10 +75,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="SC.Framework, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.36\lib\SC.Framework.dll</HintPath>
+      <HintPath>..\packages\SharpCloud.ClientAPI.1.4.0\lib\SC.Framework.dll</HintPath>
     </Reference>
     <Reference Include="SC.SharedModels, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpCloud.ClientAPI.1.0.36\lib\SC.SharedModels.dll</HintPath>
+      <HintPath>..\packages\SharpCloud.ClientAPI.1.4.0\lib\SC.SharedModels.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -176,7 +176,9 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">

@@ -370,8 +370,17 @@ namespace RiskBowTieNWR
                     try
                     {
                         var story = client.LoadStory(storyId);
-                        RiskModel.CreateStoryFromXLTemplate(story, controlStory, f.FullPath, logger, chkDelete.IsChecked==true, chkDeleteRels.IsChecked == true, chkVerbose.IsChecked == true);
-                        story.Save();
+                        var sharepermission = story.StoryAsRoadmap.SharedUsers.FirstOrDefault(su => su.User.Username.ToLower() == _viewModel.UserName.ToLower()).Action.ToString();
+                        if (sharepermission != null && (sharepermission == "admin" || sharepermission == "owner"))
+                        {
+                            RiskModel.CreateStoryFromXLTemplate(story, controlStory, f.FullPath, logger, chkDelete.IsChecked == true, chkDeleteRels.IsChecked == true, chkVerbose.IsChecked == true);
+                            story.Save();
+                        }
+                        else
+                        {
+                            logger.LogError($"Skipping story '{story.Name}', as you only have '{sharepermission}' permission");
+                            await Task.Delay(100);
+                        }
                     }
                     catch (Exception ex)
                     {
