@@ -388,7 +388,11 @@ namespace RiskBowTieNWR
                         await Task.Delay(100);
                     }
                 }
-                controlStory.Save(); // save any changes to control library
+
+                controlStory.Save(); // save any changes to control library (nneded to save relationship info)
+                controlStory = client.LoadStory(_viewModel.SelectedControlStory.Id);
+                RiskModel.UpdateRiskCountOnControlStory(controlStory, logger);
+                controlStory.Save(); // save any changes to control library (nneded to save relationship info)
 
             }
 

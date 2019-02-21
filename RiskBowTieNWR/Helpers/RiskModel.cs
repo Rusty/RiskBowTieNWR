@@ -52,6 +52,10 @@ namespace RiskBowTieNWR.Helpers
         private const string _attrTolerance = "Tolerance";
         private static readonly string[] _numberFields = { _attrPercComplete, _attrOrder, _attrCurrent, _attrTolerance };
 
+        // control lib only
+        private const string _attrRelatedRisks = "Risk Count";
+
+
         private const string _attrControlOpinion = "Control Opinion";
         private const string _attrBasisOfOpinion = "Basis of Opinion";
         private const string _attrPriority = "Action Priority";
@@ -228,8 +232,11 @@ namespace RiskBowTieNWR.Helpers
                     controlstory.RelationshipAttribute_Add(a, RelationshipAttribute.RelationshipAttributeType.List);
                 }
             }
+            if (controlstory.Attribute_FindByName(_attrRelatedRisks) == null)
+                controlstory.Attribute_Add(_attrRelatedRisks, Attribute.AttributeType.Numeric);
+
         }
-        
+
         public static string LookupControlOpinion(string o)
         {
             // Converts 'E' or 'I' to full word
@@ -764,6 +771,7 @@ namespace RiskBowTieNWR.Helpers
             var attSortOrder = story.Attribute_FindByName(_attrOrder);
             //var attPrior = story.Attribute_FindByName(_attrPrior);
             var attCurrent = story.Attribute_FindByName(_attrCurrent);
+
             var attTolerance = story.Attribute_FindByName(_attrTolerance);
             var attWithinTolerance = story.Attribute_FindByName(_attrWithinTolerance);
             var attControlOpinion = story.Attribute_FindByName(_attrControlOpinion);
@@ -914,6 +922,22 @@ namespace RiskBowTieNWR.Helpers
                 {
                     sheet = sheetNames[sht];
 
+                    try
+                    {
+                        var testsheet = XL1.Sheets[sheet];
+                        if (testsheet == null)
+                        {
+                            log.Log($"Sheet '{sheet}' does not exist, skipping.");
+                            continue;
+                        }
+                    }
+                    catch (Exception exsheet)
+                    {
+                        log.Log($"Sheet '{sheet}' does not exist, skipping.");
+                        continue;
+                    }
+
+
                     if (verbose) log.Log($"Processing Sheet{sheet}");
 
                     // cause
@@ -986,7 +1010,7 @@ namespace RiskBowTieNWR.Helpers
                                 log.Log($"DETECTED SHARED CONTROL '{words[0]}'");
                                 log.Log($"'{itemShared.Name}'");
 
-                                var rel2 = itemShared.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.AtoB);
+                                var rel2 = itemShared.Relationship_AddItem(risk, "RISK", Relationship.RelationshipDirection.AtoB);
                                 SetRelAttributeWithLogging(log, rel2, attCControlOwnerRels, XL1.Sheets[sheet].Cells(row, 9).Text.Trim());
                                 SetRelAttributeWithLogging(log, rel2, attCControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 10).Text.Trim()));
                                 SetRelAttributeWithLogging(log, rel2, attCBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 11).Text.Trim());
@@ -1116,7 +1140,7 @@ namespace RiskBowTieNWR.Helpers
                                 log.Log($"DETECTED SHARED CONTROL '{words[0]}'");
                                 log.Log($"'{itemShared.Name}'");
 
-                                var rel2 = itemShared.Relationship_AddItem(risk, "", Relationship.RelationshipDirection.BtoA);
+                                var rel2 = itemShared.Relationship_AddItem(risk, "RISK", Relationship.RelationshipDirection.BtoA);
                                 SetRelAttributeWithLogging(log, rel2, attCControlOwnerRels, XL1.Sheets[sheet].Cells(row, 39).Text.Trim());
                                 SetRelAttributeWithLogging(log, rel2, attCControlOpinionRels, LookupControlOpinion(XL1.Sheets[sheet].Cells(row, 40).Text.Trim()));
                                 SetRelAttributeWithLogging(log, rel2, attCBasisOfOpinionRels, XL1.Sheets[sheet].Cells(row, 41).Text.Trim());
@@ -1412,6 +1436,26 @@ namespace RiskBowTieNWR.Helpers
                 log.LogError(ex);
             }
             
+        }
+
+        public static void UpdateRiskCountOnControlStory(Story controlStory, Logger logger)
+        {
+            EnsureControlStoryHasRightStructure(controlStory, logger);
+
+            var attRiskCount = controlStory.Attribute_FindByName(_attrRelatedRisks);
+
+            foreach (var i in controlStory.Items)
+            {
+                int count = 0;
+                foreach (var r in i.Relationships)
+                {
+                    if (r.Comment == "RISK")
+                        count++;
+                }
+                SetAttributeWithLogging(logger, i, attRiskCount, count);
+            }
+
+
         }
 
         private static void RemoveRelFromList(Dictionary<string, Relationship> list, Relationship rel)
