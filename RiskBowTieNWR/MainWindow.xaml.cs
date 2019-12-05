@@ -362,7 +362,7 @@ namespace RiskBowTieNWR
                     await Task.Delay(100);
                 }
                 
-                // now ready to load story and update
+                // now ready to load story and updates
                 if (!string.IsNullOrEmpty(storyId))
                 {
                     logger.Log($"Loading story id '{storyId}'");
@@ -370,10 +370,12 @@ namespace RiskBowTieNWR
                     try
                     {
                         var story = client.LoadStory(storyId);
+                        var version = "5";
+                            if (chkVersion4.IsChecked== true) version = "4";
                         var sharepermission = story.StoryAsRoadmap.SharedUsers.FirstOrDefault(su => su.User.Username.ToLower() == _viewModel.UserName.ToLower()).Action.ToString();
                         if (sharepermission != null && (sharepermission == "admin" || sharepermission == "owner"))
                         {
-                            RiskModel.CreateStoryFromXLTemplate(story, controlStory, f.FullPath, logger, chkDelete.IsChecked == true, chkDeleteRels.IsChecked == true, chkVerbose.IsChecked == true);
+                            RiskModel.CreateStoryFromXLTemplate(story, controlStory, f.FullPath, logger, chkDelete.IsChecked == true, chkDeleteRels.IsChecked == true, chkVerbose.IsChecked == true,version);
                             story.Save();
                         }
                         else
